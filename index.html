@@ -23,6 +23,13 @@
         }
         .logout-btn:active { transform: scale(0.9); background: rgba(255, 68, 68, 0.1); }
 
+        /* Всплывающее уведомление */
+        #push-notif { 
+            position: fixed; top: -100px; left: 10px; right: 10px; background: var(--accent); color: #000; 
+            padding: 15px; border-radius: 15px; z-index: 3000; font-weight: bold; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            transition: top 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); display: flex; align-items: center; gap: 10px;
+        }
+
         .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
         .chat-info { flex: 1; overflow: hidden; }
         .last-msg { font-size: 0.85rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
@@ -33,20 +40,8 @@
         #search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .search-box { background: var(--card); width: 85%; padding: 30px; border-radius: 25px; text-align: center; border: 1px solid #333; }
 
-        /* ИСПРАВЛЕННЫЙ БЛОК КНОПОК: СТРОГО В РЯД */
-        .search-btns { 
-            display: flex; 
-            flex-direction: row; /* Направление в ряд */
-            justify-content: space-between; 
-            gap: 12px; 
-            margin-top: 20px; 
-            width: 100%;
-        }
-        .search-btns .btn { 
-            flex: 1; /* Одинаковая ширина */
-            height: 50px; 
-            white-space: nowrap;
-        }
+        .search-btns { display: flex; flex-direction: row; justify-content: space-between; gap: 12px; margin-top: 20px; width: 100%; }
+        .search-btns .btn { flex: 1; height: 50px; white-space: nowrap; }
 
         #chat-window { z-index: 1500; }
         .chat-header { padding: 12px 15px; background: var(--card); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #222; }
@@ -63,10 +58,11 @@
 </head>
 <body>
 
+    <div id="push-notif"></div>
+
     <div id="auth-screen" class="screen">
         <div class="auth-box" style="text-align: center; width: 85%;">
-            <h1 style="color:var(--accent); font-size: 2.8rem; margin-bottom: 10px; letter-spacing: 2px;">ВСПЫШКА</h1>
-            <p style="color: var(--gray); margin-bottom: 30px;">Тестовая Соцсеть</p>
+            <h1 style="color:var(--accent); font-size: 2.8rem; margin-bottom: 30px; letter-spacing: 2px;">ВСПЫШКА</h1>
             <input type="text" id="reg-name" placeholder="Ваше имя" style="width:100%; margin-bottom:12px;">
             <input type="text" id="reg-nick" placeholder="Никнейм (@nick)" style="width:100%; margin-bottom:20px;">
             <button class="btn" id="login-btn" onclick="app.preCheck()" style="width:100%; height: 55px; font-size: 1.1rem;">ВОЙТИ</button>
@@ -88,8 +84,8 @@
             <p id="search-status" style="font-size: 0.7rem; color: var(--gray); margin-bottom: 15px;">Введите @ник</p>
             <input type="text" id="search-input" placeholder="@ник..." style="width:100%;">
             <div class="search-btns">
-                <button class="btn" id="search-btn" onclick="app.findUser()">НАЙТИ</button>
                 <button class="btn" style="background:#222; color:#fff;" onclick="app.hideSearch()">ОТМЕНА</button>
+                <button class="btn" id="search-btn" onclick="app.findUser()">НАЙТИ</button>
             </div>
         </div>
     </div>
@@ -120,49 +116,36 @@
                 const name = document.getElementById('reg-name').value.trim();
                 const nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
                 if(!name || !nick) return alert("Заполни все поля!");
-                
                 const btn = document.getElementById('login-btn');
                 btn.disabled = true; btn.innerText = "ПРОВЕРКА...";
-
                 const temp = new Ably.Realtime(this.key);
                 const chan = temp.channels.get('v11-auth');
                 let isTaken = false;
-
                 chan.subscribe('presence-' + nick, () => {
                     isTaken = true; alert("Никнейм сейчас в сети!");
                     btn.disabled = false; btn.innerText = "ВОЙТИ";
                     temp.close();
                 });
                 chan.publish('ping', { nick });
-
-                setTimeout(() => {
-                    if(!isTaken) { temp.close(); this.login(name, nick, Date.now()); }
-                }, 2000);
+                setTimeout(() => { if(!isTaken) { temp.close(); this.login(name, nick, Date.now()); } }, 2000);
             },
 
             login(name, nick, time) {
                 this.me = { name, nick, time };
                 localStorage.setItem('v11_n', name); localStorage.setItem('v11_u', nick); localStorage.setItem('v11_t', time);
                 this.ably = new Ably.Realtime({ key: this.key, clientId: nick });
-                
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('list-screen').style.display = 'flex';
                 document.getElementById('my-info').innerText = `@${nick}`;
-                
                 this.initAppLogic();
                 this.renderList();
-                
-                setInterval(() => {
-                    if(this.ably) this.ably.channels.get('v11-auth').publish('heartbeat', { nick: this.me.nick });
-                }, 15000);
+                setInterval(() => { if(this.ably) this.ably.channels.get('v11-auth').publish('heartbeat', { nick: this.me.nick }); }, 15000);
             },
 
             initAppLogic() {
                 const auth = this.ably.channels.get('v11-auth');
                 auth.subscribe('ping', (m) => { if(m.data.nick === this.me.nick) auth.publish('presence-' + this.me.nick, { t: this.me.time }); });
-                auth.subscribe('find', (m) => {
-                    if(m.data.target === this.me.nick) auth.publish('found-' + m.data.from, { nick: this.me.nick, name: this.me.name });
-                });
+                auth.subscribe('find', (m) => { if(m.data.target === this.me.nick) auth.publish('found-' + m.data.from, { nick: this.me.nick, name: this.me.name }); });
 
                 const notify = this.ably.channels.get('v11-notif-' + this.me.nick);
                 notify.subscribe('msg', (m) => {
@@ -171,7 +154,12 @@
                     if(!this.history[from]) this.history[from] = [];
                     this.history[from].push({ f: from, t: text });
                     this.save();
-                    if(this.currentNick === from) this.renderMsg(false, text);
+                    
+                    if(this.currentNick === from) {
+                        this.renderMsg(false, text);
+                    } else {
+                        this.showPush(name, text);
+                    }
                     this.renderList();
                 });
 
@@ -183,45 +171,36 @@
                 auth.publish('iam-' + this.me.nick, { t: this.me.time });
             },
 
+            showPush(name, text) {
+                const p = document.getElementById('push-notif');
+                p.innerHTML = `<div class="avatar" style="width:30px; height:30px; font-size:0.7rem; background:#000; color:#fff">${name[0]}</div>
+                               <div style="flex:1"><div>${name}</div><div style="font-size:0.7rem; opacity:0.8; font-weight:normal">${text}</div></div>`;
+                p.style.top = '15px';
+                setTimeout(() => { p.style.top = '-100px'; }, 3000);
+            },
+
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 if(!target || target === this.me.nick) return;
-                
                 const btn = document.getElementById('search-btn');
                 const status = document.getElementById('search-status');
                 btn.disabled = true; btn.innerText = "...";
-                status.innerText = "Отправка запроса...";
-                
                 const auth = this.ably.channels.get('v11-auth');
                 let found = false;
-
                 const sub = auth.subscribe('found-' + this.me.nick, (m) => {
                     if(m.data.nick === target && !found) {
-                        found = true;
-                        auth.unsubscribe('found-' + this.me.nick);
-                        this.hideSearch();
-                        this.openChat(target, m.data.name);
+                        found = true; auth.unsubscribe('found-' + this.me.nick);
+                        this.hideSearch(); this.openChat(target, m.data.name);
                         btn.disabled = false; btn.innerText = "НАЙТИ";
-                        status.innerText = "Введите @ник";
                     }
                 });
-
                 let count = 0;
                 const loop = setInterval(() => {
                     if(found || count >= 3) { clearInterval(loop); return; }
-                    status.innerText = `Попытка ${count + 1} из 3...`;
                     auth.publish('find', { target, from: this.me.nick });
                     count++;
                 }, 1000);
-
-                setTimeout(() => { 
-                    if(!found) { 
-                        alert("Не в сети. Проверьте, что приложение открыто на том телефоне."); 
-                        btn.disabled = false; btn.innerText = "НАЙТИ"; 
-                        status.innerText = "Не найден";
-                        auth.unsubscribe('found-' + this.me.nick); 
-                    }
-                }, 5000);
+                setTimeout(() => { if(!found) { alert("Не в сети"); btn.disabled = false; btn.innerText = "НАЙТИ"; auth.unsubscribe('found-' + this.me.nick); } }, 5000);
             },
 
             openChat(nick, name) {
