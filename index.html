@@ -35,7 +35,8 @@
 
         .input-bar { padding: 12px 15px 40px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 25px; color: #fff; outline: none; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        .btn:disabled { background: #555; cursor: not-allowed; }
         .exit-btn { font-size: 0.7rem; color: #ff4444; border: 1px solid #ff4444; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
@@ -46,11 +47,12 @@
             <h1>ВСПЫШКА</h1>
             <input type="text" id="reg-name" placeholder="Ваше Имя" style="margin-bottom:10px; width:100%;">
             <input type="text" id="reg-nick" placeholder="Никнейм (@nick)" style="margin-bottom:20px; width:100%;">
-            <button class="btn" onclick="app.login()" style="width:100%;">ВОЙТИ</button>
+            <button class="btn" id="login-btn" onclick="app.checkNickBeforeLogin()" style="width:100%;">ВОЙТИ</button>
+            <p id="auth-status" style="font-size: 0.8rem; margin-top: 15px; color: var(--accent);"></p>
         </div>
     </div>
 
-    <div id="list-screen" class="screen" style="display:flex;">
+    <div id="list-screen" class="screen">
         <header>
             <div>
                 <span style="font-weight:900; color:var(--accent);">ВСПЫШКА</span><br>
@@ -94,31 +96,72 @@
             chats: JSON.parse(localStorage.getItem('vsp_chats_v4') || "{}"),
             history: JSON.parse(localStorage.getItem('vsp_history_v4') || "{}"),
 
-            login() {
-                this.me.name = document.getElementById('reg-name').value.trim();
-                this.me.nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
-                if(!this.me.name || !this.me.nick) return alert("Заполни поля!");
+            // Проверка ника перед входом
+            checkNickBeforeLogin() {
+                const name = document.getElementById('reg-name').value.trim();
+                const nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
+                const btn = document.getElementById('login-btn');
+                const status = document.getElementById('auth-status');
+
+                if(!name || !nick) return alert("Заполните все поля!");
+
+                btn.disabled = true;
+                btn.innerText = "ПРОВЕРКА НИКА...";
+                status.innerText = "";
+
+                // Временно подключаемся для проверки
+                const tempAbly = new Ably.Realtime(this.key);
+                const checkChannel = tempAbly.channels.get('global-v4');
+                
+                let isTaken = false;
+                
+                // Слушаем ответ от возможного владельца ника
+                checkChannel.subscribe('presence-check-response-' + nick, (m) => {
+                    isTaken = true;
+                    btn.disabled = false;
+                    btn.innerText = "ВОЙТИ";
+                    status.innerText = "Этот ник уже занят кем-то другим!";
+                    tempAbly.close();
+                });
+
+                // Посылаем запрос: "Кто-нибудь использует этот ник?"
+                checkChannel.publish('presence-check-query', { nick: nick });
+
+                // Если за 2 секунды никто не ответил, считаем ник свободным
+                setTimeout(() => {
+                    if (!isTaken) {
+                        tempAbly.close();
+                        this.login(name, nick);
+                    }
+                }, 2000);
+            },
+
+            login(name, nick) {
+                this.me.name = name;
+                this.me.nick = nick;
 
                 localStorage.setItem('f_name', this.me.name);
                 localStorage.setItem('f_nick', this.me.nick);
 
                 this.ably = new Ably.Realtime({ key: this.key, clientId: this.me.nick });
                 document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('list-screen').style.display = 'flex';
                 document.getElementById('my-info').innerText = `@${this.me.nick}`;
                 
                 this.renderList();
                 this.listenGlobal();
             },
 
-            logout() {
-                if(confirm("Выйти из профиля? Все чаты будут стерты.")) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            },
-
             listenGlobal() {
                 const global = this.ably.channels.get('global-v4');
+                
+                // Отвечаем на запросы проверки ника
+                global.subscribe('presence-check-query', (m) => {
+                    if (m.data.nick === this.me.nick) {
+                        global.publish('presence-check-response-' + this.me.nick, { taken: true });
+                    }
+                });
+
                 global.subscribe('ping-' + this.me.nick, (m) => {
                     if(!this.chats[m.data.from]) {
                         this.chats[m.data.from] = m.data.name;
@@ -129,55 +172,39 @@
                 });
             },
 
+            // Остальные функции (logout, showSearch, findUser, openChat, send, и т.д.) остаются прежними
+            logout() {
+                if(confirm("Выйти из профиля?")) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            },
             showSearch() { document.getElementById('search-modal').style.display = 'flex'; },
             hideSearch() { document.getElementById('search-modal').style.display = 'none'; },
-
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 const status = document.getElementById('search-status');
                 if(!target || target === this.me.nick) return;
-
-                status.innerText = "Проверка ника...";
+                status.innerText = "Поиск...";
                 const global = this.ably.channels.get('global-v4');
-                
                 let found = false;
-                const timeout = setTimeout(() => {
-                    if(!found) {
-                        status.innerText = "Пользователь не найден";
-                        global.unsubscribe('pong-' + this.me.nick);
-                    }
-                }, 3000);
-
+                const timeout = setTimeout(() => { if(!found) status.innerText = "Пользователь не найден"; }, 3000);
                 global.subscribe('pong-' + this.me.nick, (m) => {
                     if(m.data.nick === target) {
-                        found = true;
-                        clearTimeout(timeout);
-                        this.chats[target] = m.data.name;
-                        this.save();
-                        this.renderList();
-                        this.hideSearch();
-                        this.openChat(target, m.data.name);
-                        global.unsubscribe('pong-' + this.me.nick);
+                        found = true; clearTimeouts(timeout);
+                        this.chats[target] = m.data.name; this.save(); this.renderList();
+                        this.hideSearch(); this.openChat(target, m.data.name);
                     }
                 });
                 global.publish('ping-' + target, { from: this.me.nick, name: this.me.name });
             },
-
             openChat(nick, name) {
-                this.current.nick = nick;
-                this.current.name = name;
+                this.current.nick = nick; this.current.name = name;
                 document.getElementById('chat-window').style.display = 'flex';
                 document.getElementById('c-name').innerText = name;
                 document.getElementById('c-avatar').innerText = name[0].toUpperCase();
-                
-                const box = document.getElementById('messages');
-                box.innerHTML = '';
-                
-                // Загрузка истории из памяти
-                if(this.history[nick]) {
-                    this.history[nick].forEach(msg => this.renderMsg(msg.f === this.me.nick, msg.t));
-                }
-
+                const box = document.getElementById('messages'); box.innerHTML = '';
+                if(this.history[nick]) this.history[nick].forEach(msg => this.renderMsg(msg.f === this.me.nick, msg.t));
                 const id = [this.me.nick, nick].sort().join('-v4-');
                 this.current.channel = this.ably.channels.get(id);
                 this.current.channel.subscribe('m', (m) => {
@@ -185,67 +212,46 @@
                     this.renderMsg(m.data.f === this.me.nick, m.data.t);
                 });
             },
-
             saveMessage(chatWith, from, text) {
                 if(!this.history[chatWith]) this.history[chatWith] = [];
-                // Проверка на дубликаты (чтобы не сохранять одно и то же сообщение дважды)
                 const isDuplicate = this.history[chatWith].some(m => m.f === from && m.t === text);
                 if(!isDuplicate || from !== this.me.nick) { 
                     this.history[chatWith].push({ f: from, t: text });
                     localStorage.setItem('vsp_history_v4', JSON.stringify(this.history));
                 }
             },
-
             send() {
                 const i = document.getElementById('m-input');
-                const text = i.value.trim();
-                if(!text) return;
-                
-                this.current.channel.publish('m', { f: this.me.nick, t: text });
-                this.saveMessage(this.current.nick, this.me.nick, text);
-                
+                if(!i.value.trim()) return;
+                this.current.channel.publish('m', { f: this.me.nick, t: i.value });
+                this.saveMessage(this.current.nick, this.me.nick, i.value);
                 this.ably.channels.get('global-v4').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
                 i.value = '';
             },
-
             renderMsg(isMe, text) {
                 const b = document.getElementById('messages');
                 const d = document.createElement('div');
                 d.className = `msg ${isMe ? 'out' : 'in'}`;
                 d.innerText = text;
-                b.appendChild(d);
-                b.scrollTop = b.scrollHeight;
+                b.appendChild(d); b.scrollTop = b.scrollHeight;
             },
-
             renderList() {
-                const c = document.getElementById('chat-items-container');
-                c.innerHTML = '';
+                const c = document.getElementById('chat-items-container'); c.innerHTML = '';
                 for(let n in this.chats) {
-                    const d = document.createElement('div');
-                    d.className = 'chat-item';
+                    const d = document.createElement('div'); d.className = 'chat-item';
                     d.onclick = () => this.openChat(n, this.chats[n]);
                     d.innerHTML = `<div class="avatar">${this.chats[n][0]}</div><div><b>${this.chats[n]}</b><br><small style="color:var(--gray)">@${n}</small></div>`;
                     c.appendChild(d);
                 }
             },
-
-            closeChat() {
-                if(this.current.channel) this.current.channel.unsubscribe();
-                document.getElementById('chat-window').style.display = 'none';
-                this.current.nick = '';
-            },
+            closeChat() { if(this.current.channel) this.current.channel.unsubscribe(); document.getElementById('chat-window').style.display = 'none'; this.current.nick = ''; },
             save() { localStorage.setItem('vsp_chats_v4', JSON.stringify(this.chats)); }
         };
 
         window.onload = () => {
             const n = localStorage.getItem('f_name'), u = localStorage.getItem('f_nick');
-            if(n && u) { 
-                document.getElementById('reg-name').value = n;
-                document.getElementById('reg-nick').value = u;
-                app.login();
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-            }
+            if(n && u) app.login(n, u);
+            else document.getElementById('auth-screen').style.display = 'flex';
         };
     </script>
 </body>
