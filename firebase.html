@@ -9,37 +9,49 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        body { font-family: sans-serif; margin: 0; background-color: #f4f4f9; color: #333; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; background-color: #1a1a1a; color: #eeeeee; }
         
-        /* Стили авторизации */
+        /* Экран входа */
         #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .auth-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
+        .auth-box { background: #2d2d2d; padding: 30px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); width: 320px; text-align: center; border: 1px solid #ff8c00; }
         
-        /* Твой прошлый дизайн чата */
+        /* Чат */
         #chat-screen { display: none; flex-direction: column; height: 100vh; }
-        header { background-color: #0088cc; color: white; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .message { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 80%; }
-        .message .author { font-weight: bold; font-size: 0.85em; color: #0088cc; margin-bottom: 3px; }
+        header { background-color: #ff8c00; color: #1a1a1a; padding: 15px; text-align: center; font-size: 1.4em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Поля и кнопки */
-        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-main { background-color: #0088cc; color: white; }
-        .btn-reg { background-color: #28a745; color: white; margin-top: 5px; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #121212; }
+        .message { background: #333; padding: 12px; border-radius: 10px; border-left: 4px solid #ff8c00; max-width: 85%; align-self: flex-start; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+        .message .author { font-weight: bold; font-size: 0.9em; color: #ff8c00; margin-bottom: 4px; }
         
-        .input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #ddd; }
-        .input-area input { flex: 1; margin: 0 10px 0 0; }
-        .input-area button { width: auto; padding: 0 20px; }
+        /* Поля ввода */
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; background: #222; color: #fff; outline: none; }
+        input:focus { border-color: #ff8c00; }
         
-        .hidden { display: none !important; }
+        /* Кнопки */
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
+        .btn-main { background-color: #ff8c00; color: #1a1a1a; }
+        .btn-main:hover { background-color: #e67e00; transform: translateY(-1px); }
+        .btn-reg { background-color: transparent; color: #ff8c00; border: 1px solid #ff8c00; margin-top: 10px; }
+        .btn-reg:hover { background-color: rgba(255, 140, 0, 0.1); }
+        
+        /* Зона ввода сообщения */
+        .input-area { display: flex; padding: 15px; background: #2d2d2d; border-top: 1px solid #444; }
+        .input-area input { flex: 1; margin: 0 10px 0 0; border-color: #555; }
+        .input-area button { width: auto; padding: 0 25px; }
+        
+        .logout-btn { background: none; color: #666; font-size: 11px; border: none; cursor: pointer; padding: 10px; text-decoration: underline; }
+        .logout-btn:hover { color: #ff8c00; }
+
+        /* Кастомизация скроллбара */
+        #messages::-webkit-scrollbar { width: 5px; }
+        #messages::-webkit-scrollbar-thumb { background: #ff8c00; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
         <div class="auth-box">
-            <h2>Вспышка</h2>
+            <h2 style="color: #ff8c00; margin-top: 0;">ВСПЫШКА</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Пароль">
             <button class="btn-main" onclick="login()">Войти</button>
@@ -51,10 +63,10 @@
         <header>Вспышка</header>
         <div id="messages"></div>
         <div class="input-area">
-            <input type="text" id="msg-input" placeholder="Сообщение...">
-            <button class="btn-main" onclick="send()">Отправить</button>
+            <input type="text" id="msg-input" placeholder="Введите сообщение...">
+            <button class="btn-main" onclick="send()">ОТПРАВИТЬ</button>
         </div>
-        <button onclick="logout()" style="background:none; color: gray; font-size: 12px; margin-bottom: 10px;">Выйти из аккаунта</button>
+        <button class="logout-btn" onclick="logout()">Выйти из аккаунта</button>
     </div>
 
     <script>
@@ -72,24 +84,25 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Уведомления
         if (Notification.permission !== "granted") Notification.requestPermission();
 
         function register() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
-            auth.createUserWithEmailAndPassword(e, p).catch(err => alert(err.message));
+            if(!e || !p) return alert("Заполни поля!");
+            auth.createUserWithEmailAndPassword(e, p)
+                .then(() => alert("Регистрация успешна! Войдите."))
+                .catch(err => alert(err.message));
         }
 
         function login() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert("Ошибка: " + err.message));
         }
 
         function logout() { auth.signOut(); }
 
-        // Переключение экранов
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('auth-screen').style.display = 'none';
@@ -98,11 +111,13 @@
             } else {
                 document.getElementById('auth-screen').style.display = 'flex';
                 document.getElementById('chat-screen').style.display = 'none';
+                document.getElementById('messages').innerHTML = '';
             }
         });
 
         function send() {
-            const text = document.getElementById('msg-input').value;
+            const input = document.getElementById('msg-input');
+            const text = input.value;
             const user = auth.currentUser;
             if (text && user) {
                 db.ref('messages').push({
@@ -110,13 +125,14 @@
                     t: text,
                     uid: user.uid
                 });
-                document.getElementById('msg-input').value = '';
+                input.value = '';
             }
         }
 
         function loadMessages() {
             const box = document.getElementById('messages');
-            db.ref('messages').on('child_added', snap => {
+            db.ref('messages').off();
+            db.ref('messages').limitToLast(50).on('child_added', snap => {
                 const data = snap.val();
                 const div = document.createElement('div');
                 div.className = 'message';
