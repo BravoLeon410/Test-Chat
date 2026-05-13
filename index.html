@@ -3,75 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Вспышка Messenger</title>
+    <title>ВСПЫШКА</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root {
             --bg: #000000;
-            --card: #121212;
+            --card: #111111;
             --accent: #ff8c00;
             --text: #ffffff;
-            --msg-in: #222222;
+            --gray: #888888;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
 
-        body { background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
 
-        /* Вход */
+        /* Экран входа */
         #auth-screen {
             position: fixed; inset: 0; background: var(--bg);
-            display: flex; justify-content: center; align-items: center; z-index: 2000;
+            display: flex; justify-content: center; align-items: center; z-index: 3000;
         }
-        .auth-box { text-align: center; width: 80%; max-width: 300px; }
-        .auth-box h1 { color: var(--accent); margin-bottom: 20px; letter-spacing: 5px; }
+        .auth-box { text-align: center; width: 85%; max-width: 300px; }
+        .auth-box h1 { color: var(--accent); letter-spacing: 5px; margin-bottom: 20px; }
 
-        /* Шапка */
-        header {
-            padding: 15px; background: var(--card); border-bottom: 1px solid #222;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        /* Поиск */
-        .search-bar {
-            padding: 10px; background: #1a1a1a; display: flex; gap: 10px;
-        }
-
-        /* Основная область */
-        #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        /* Список чатов */
+        #chat-list-screen { display: flex; flex-direction: column; height: 100%; }
+        header { padding: 20px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
         
-        #chat-list { display: none; padding: 10px; } /* В будущем для списка чатов */
+        .chat-item {
+            padding: 15px 20px; border-bottom: 1px solid #111;
+            display: flex; align-items: center; gap: 15px; cursor: pointer;
+        }
+        .chat-item:active { background: #1a1a1a; }
+        .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 1.2rem; }
 
-        #messages {
-            flex: 1; overflow-y: auto; padding: 15px;
-            display: flex; flex-direction: column; gap: 10px;
+        /* Кнопка Плюс */
+        .fab {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 60px; height: 60px; background: var(--accent);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 30px; color: #000; box-shadow: 0 5px 15px rgba(255,140,0,0.4);
+            cursor: pointer; z-index: 100;
         }
 
-        /* Пузырьки */
-        .msg {
-            max-width: 80%; padding: 10px 15px; border-radius: 18px;
-            word-wrap: break-word; line-height: 1.4; position: relative;
-        }
-        .in { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
+        /* Экран переписки */
+        #chat-window { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 200; }
+        .chat-header { padding: 15px; background: var(--card); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #222; }
+        
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 10px 15px; border-radius: 18px; word-wrap: break-word; }
+        .in { align-self: flex-start; background: #222; border-bottom-left-radius: 2px; }
         .out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 2px; }
 
-        /* Поле ввода */
         .input-bar {
-            padding: 15px 15px 45px 15px; background: var(--card);
+            padding: 10px 15px 45px 15px; background: var(--card);
             display: flex; gap: 10px; border-top: 1px solid #222;
         }
 
-        input {
-            flex: 1; background: #1e1e1e; border: 1px solid #333;
-            padding: 12px 18px; border-radius: 25px; color: #fff; outline: none; font-size: 16px;
-        }
+        input { flex: 1; background: #1e1e1e; border: 1px solid #333; padding: 12px 18px; border-radius: 25px; color: #fff; outline: none; font-size: 16px; }
+        button { background: var(--accent); color: #000; border: none; padding: 0 20px; border-radius: 25px; font-weight: bold; }
 
-        button {
-            background: var(--accent); color: #000; border: none;
-            padding: 0 20px; border-radius: 25px; font-weight: bold; cursor: pointer;
-        }
-
-        .status { font-size: 0.7rem; color: var(--accent); text-align: center; margin: 5px; opacity: 0.6; }
+        .back-btn { font-size: 1.5rem; cursor: pointer; color: var(--accent); }
     </style>
 </head>
 <body>
@@ -79,21 +71,28 @@
     <div id="auth-screen">
         <div class="auth-box">
             <h1>ВСПЫШКА</h1>
-            <input type="text" id="my-nick" placeholder="Ваш никнейм..." style="margin-bottom:15px; width: 100%;">
-            <button onclick="login()" style="width: 100%; height: 45px;">ВОЙТИ</button>
+            <input type="text" id="my-nick" placeholder="Ваш ник..." style="width: 100%; margin-bottom: 15px;">
+            <button onclick="login()" style="width: 100%; height: 45px;">НАЧАТЬ</button>
         </div>
     </div>
 
-    <header>
-        <span id="display-name" style="font-weight: 900; color: var(--accent);">ВСПЫШКА</span>
-        <button onclick="searchUser()" style="padding: 5px 15px; font-size: 0.8rem;">НАЙТИ</button>
-    </header>
+    <div id="chat-list-screen">
+        <header>
+            <span style="font-weight: 900; color: var(--accent);">ВСПЫШКА</span>
+            <span id="user-display" style="opacity: 0.5;"></span>
+        </header>
+        <div id="list-container">
+            </div>
+        <div class="fab" onclick="addNewChat()">+</div>
+    </div>
 
-    <div id="main-container">
-        <div id="messages">
-            <div class="status">Нажмите «Найти», чтобы написать кому-то по нику</div>
+    <div id="chat-window">
+        <div class="chat-header">
+            <span class="back-btn" onclick="closeChat()">←</span>
+            <div id="chat-with-avatar" class="avatar" style="width: 35px; height: 35px; font-size: 0.9rem;">?</div>
+            <span id="chat-with-name" style="font-weight: bold;">Собеседник</span>
         </div>
-        
+        <div id="messages"></div>
         <div class="input-bar">
             <input type="text" id="m-text" placeholder="Сообщение...">
             <button onclick="sendMsg()">OK</button>
@@ -102,83 +101,111 @@
 
     <script>
         const API_KEY = 'luQxZg.-M9KWA:x7tD3RMvL0N1k2KbITJHZ9hgeluihhpm5yUJeIzYSig';
-        let ably, currentChannel, myNick, targetNick;
-
-        // Авто-вход
-        window.onload = () => {
-            const saved = localStorage.getItem('vspyshka_nick');
-            if (saved) document.getElementById('my-nick').value = saved;
-        };
+        let ably, myNick, currentPeer, currentChannel;
+        let myChats = JSON.parse(localStorage.getItem('v_chats') || "[]");
 
         function login() {
             myNick = document.getElementById('my-nick').value.trim().toLowerCase();
             if (!myNick) return alert("Введите ник!");
-            
-            localStorage.setItem('vspyshka_nick', myNick);
+            localStorage.setItem('v_nick', myNick);
             ably = new Ably.Realtime(API_KEY);
             document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('display-name').innerText = "@" + myNick;
+            document.getElementById('user-display').innerText = "@" + myNick;
+            renderChatList();
             
-            // Подписка на уведомления о новых сообщениях для меня
+            // Слушаем входящие сообщения
             const inbox = ably.channels.get('inbox-' + myNick);
-            inbox.subscribe('new-chat', (m) => {
-                if (targetNick !== m.data.from) {
-                    alert("Новое сообщение от @" + m.data.from);
-                    openChat(m.data.from);
+            inbox.subscribe('notify', (m) => {
+                if (!myChats.includes(m.data.from)) {
+                    myChats.push(m.data.from);
+                    saveChats();
+                    renderChatList();
+                }
+                if (currentPeer !== m.data.from) {
+                    alert("Сообщение от @" + m.data.from + ": " + m.data.text);
                 }
             });
         }
 
-        function searchUser() {
-            const peer = prompt("Введите никнейм человека:");
+        function renderChatList() {
+            const container = document.getElementById('list-container');
+            container.innerHTML = myChats.length === 0 ? '<p style="text-align:center; margin-top:50px; color:#555;">У вас пока нет чатов.<br>Нажмите +, чтобы найти друга.</p>' : '';
+            myChats.forEach(peer => {
+                const item = document.createElement('div');
+                item.className = 'chat-item';
+                item.onclick = () => openChat(peer);
+                item.innerHTML = `
+                    <div class="avatar">${peer[0].toUpperCase()}</div>
+                    <div>
+                        <div style="font-weight:bold;">@${peer}</div>
+                        <div style="font-size:0.8rem; color:var(--gray);">Нажмите, чтобы открыть чат</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addNewChat() {
+            const peer = prompt("Введите ник собеседника:");
             if (peer && peer.toLowerCase() !== myNick) {
-                openChat(peer.toLowerCase());
+                const p = peer.toLowerCase();
+                if (!myChats.includes(p)) {
+                    myChats.push(p);
+                    saveChats();
+                }
+                openChat(p);
             }
         }
 
         function openChat(peer) {
-            targetNick = peer;
-            document.getElementById('messages').innerHTML = `<div class="status">Чат с @${peer}</div>`;
-            
-            // Создаем уникальный ID канала (сортируем ники по алфавиту)
-            const channelID = [myNick, targetNick].sort().join('-to-');
+            currentPeer = peer;
+            document.getElementById('chat-window').style.display = 'flex';
+            document.getElementById('chat-with-name').innerText = "@" + peer;
+            document.getElementById('chat-with-avatar').innerText = peer[0].toUpperCase();
+            document.getElementById('messages').innerHTML = '';
+
+            const channelID = [myNick, currentPeer].sort().join('-to-');
             currentChannel = ably.channels.get(channelID);
             
             currentChannel.subscribe('msg', (m) => {
-                render(m.data.user, m.data.text);
+                const box = document.getElementById('messages');
+                const isMe = m.data.user === myNick;
+                const d = document.createElement('div');
+                d.className = `msg ${isMe ? 'out' : 'in'}`;
+                d.innerText = m.data.text;
+                box.appendChild(d);
+                box.scrollTop = box.scrollHeight;
             });
-
-            // Уведомляем собеседника, что мы открыли чат
-            const inbox = ably.channels.get('inbox-' + targetNick);
-            inbox.publish('new-chat', { from: myNick });
         }
 
         function sendMsg() {
             const input = document.getElementById('m-text');
-            if (input.value.trim() && currentChannel) {
-                currentChannel.publish('msg', { user: myNick, text: input.value });
+            const text = input.value.trim();
+            if (text && currentChannel) {
+                currentChannel.publish('msg', { user: myNick, text: text });
+                
+                // Уведомляем собеседника
+                const inbox = ably.channels.get('inbox-' + currentPeer);
+                inbox.publish('notify', { from: myNick, text: text });
+                
                 input.value = '';
-            } else if (!currentChannel) {
-                alert("Сначала найдите собеседника!");
             }
         }
 
-        function render(user, text) {
-            const box = document.getElementById('messages');
-            const isMe = user === myNick;
-            const d = document.createElement('div');
-            d.className = `msg ${isMe ? 'out' : 'in'}`;
-            d.innerText = text;
-            box.appendChild(d);
-            box.scrollTop = box.scrollHeight;
+        function closeChat() {
+            if(currentChannel) currentChannel.unsubscribe();
+            document.getElementById('chat-window').style.display = 'none';
+            currentPeer = null;
+            renderChatList();
         }
 
-        document.addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                if (document.getElementById('auth-screen').style.display !== 'none') login();
-                else sendMsg();
-            }
-        });
+        function saveChats() { localStorage.setItem('v_chats', JSON.stringify(myChats)); }
+
+        // Загрузка ника
+        window.onload = () => {
+            const n = localStorage.getItem('v_nick');
+            if(n) document.getElementById('my-nick').value = n;
+        };
     </script>
 </body>
 </html>
