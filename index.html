@@ -12,53 +12,46 @@
 
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         #auth-screen { display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .auth-box { width: 85%; max-width: 320px; text-align: center; }
-        .auth-box h1 { color: var(--accent); letter-spacing: 4px; margin-bottom: 25px; font-size: 2.2rem; }
         
         header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .chat-info { flex: 1; overflow: hidden; }
-        .last-msg { font-size: 0.8rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
-        .last-msg.read { color: var(--gray); }
+        .last-msg { font-size: 0.8rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
         
         .avatar { width: 45px; height: 45px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; flex-shrink: 0; }
-        .fab { position: fixed; bottom: 30px; right: 20px; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #000; z-index: 100; box-shadow: 0 4px 12px rgba(255,140,0,0.3); }
+        .fab { position: fixed; bottom: 30px; right: 20px; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #000; z-index: 100; }
 
         #search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .search-box { background: var(--card); width: 80%; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #333; }
+        .search-box { background: var(--card); width: 85%; padding: 20px; border-radius: 15px; text-align: center; }
 
         #chat-window { z-index: 1500; }
-        .chat-header { padding: 12px 15px; background: var(--card); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #222; }
+        .chat-header { padding: 10px 15px; background: var(--card); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #222; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #080808; }
         
-        .msg { max-width: 80%; padding: 10px 14px; border-radius: 18px; word-wrap: break-word; font-size: 15px; line-height: 1.4; }
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 15px; }
         .in { align-self: flex-start; background: #222; border-bottom-left-radius: 4px; }
         .out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
 
         .input-bar { padding: 10px 15px 30px 15px; background: var(--card); display: flex; gap: 8px; border-top: 1px solid #222; }
-        input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 10px 15px; border-radius: 20px; color: #fff; outline: none; font-size: 16px; }
+        input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 10px 15px; border-radius: 20px; color: #fff; outline: none; }
         .btn { background: var(--accent); color: #000; border: none; padding: 8px 18px; border-radius: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="screen">
-        <div class="auth-box">
-            <h1>ВСПЫШКА</h1>
-            <input type="text" id="reg-name" placeholder="Ваше Имя" style="margin-bottom:10px; width:100%;">
-            <input type="text" id="reg-nick" placeholder="Никнейм (@nick)" style="margin-bottom:15px; width:100%;">
-            <button class="btn" id="login-btn" onclick="app.preCheck()" style="width:100%;">ВОЙТИ</button>
-            <p id="auth-status" style="color: #ff4444; font-size: 0.8rem; margin-top: 10px;"></p>
+        <div class="auth-box" style="text-align: center; width: 80%;">
+            <h1 style="color:var(--accent); margin-bottom:20px;">ВСПЫШКА</h1>
+            <input type="text" id="reg-name" placeholder="Имя" style="width:100%; margin-bottom:10px; padding:12px;">
+            <input type="text" id="reg-nick" placeholder="Никнейм" style="width:100%; margin-bottom:20px; padding:12px;">
+            <button class="btn" id="login-btn" onclick="app.preLogin()" style="width:100%;">ВОЙТИ</button>
         </div>
     </div>
 
     <div id="list-screen" class="screen">
         <header>
-            <div>
-                <b style="color:var(--accent);">ВСПЫШКА</b><br>
-                <span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span>
-            </div>
-            <div onclick="app.logout()" style="color:#ff4444; font-size:0.7rem; border:1px solid #ff4444; padding:3px 8px; border-radius:5px;">ВЫЙТИ</div>
+            <div><b style="color:var(--accent);">ВСПЫШКА</b><br><span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span></div>
+            <div onclick="app.logout()" style="color:#ff4444; border:1px solid #ff4444; padding:3px 8px; border-radius:5px; font-size:0.7rem;">ВЫЙТИ</div>
         </header>
         <div id="chat-items-container" style="flex: 1; overflow-y: auto;"></div>
         <div class="fab" onclick="app.showSearch()">+</div>
@@ -66,18 +59,18 @@
 
     <div id="search-modal">
         <div class="search-box">
-            <h4 style="margin-bottom:15px; color: var(--accent);">Поиск</h4>
-            <input type="text" id="search-input" placeholder="@ник..." style="width:100%; margin-bottom:15px;">
-            <button class="btn" onclick="app.findUser()" style="width: 100%;">НАЙТИ</button>
+            <h4 style="margin-bottom:15px; color:var(--accent);">Найти пользователя</h4>
+            <input type="text" id="search-input" placeholder="@ник..." style="width:100%; margin-bottom:15px; padding:12px;">
+            <button class="btn" id="search-btn" onclick="app.findUser()" style="width: 100%;">ПОИСК</button>
             <button class="btn" style="background:#333; color:#fff; margin-top:8px; width: 100%;" onclick="app.hideSearch()">ОТМЕНА</button>
         </div>
     </div>
 
     <div id="chat-window" class="screen">
         <div class="chat-header">
-            <span onclick="app.closeChat()" style="font-size:2rem; color:var(--accent); padding-right:15px;">‹</span>
+            <span onclick="app.closeChat()" style="font-size:2rem; color:var(--accent); padding:0 10px;">‹</span>
             <div id="c-avatar" class="avatar" style="width:35px; height:35px; font-size:0.8rem;">?</div>
-            <div id="c-name" style="font-weight:bold; flex:1; font-size:0.9rem;">Имя</div>
+            <div id="c-name" style="font-weight:bold; flex:1;">Имя</div>
         </div>
         <div id="messages"></div>
         <div class="input-bar">
@@ -92,10 +85,10 @@
             ably: null,
             me: { nick: '', name: '', time: 0 },
             currentNick: '',
-            chats: JSON.parse(localStorage.getItem('v8_chats') || "{}"),
-            history: JSON.parse(localStorage.getItem('v8_hist') || "{}"),
+            chats: JSON.parse(localStorage.getItem('v9_chats') || "{}"),
+            history: JSON.parse(localStorage.getItem('v9_hist') || "{}"),
 
-            preCheck() {
+            preLogin() {
                 const name = document.getElementById('reg-name').value.trim();
                 const nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
                 if(!name || !nick) return alert("Заполни поля!");
@@ -104,99 +97,99 @@
                 btn.disabled = true; btn.innerText = "ПРОВЕРКА...";
 
                 const temp = new Ably.Realtime(this.key);
-                const sec = temp.channels.get('v8-security');
-                let isTaken = false;
+                const chan = temp.channels.get('v9-core');
+                let taken = false;
 
-                sec.subscribe('report-' + nick, () => {
-                    isTaken = true; alert("Этот ник сейчас в сети!");
+                chan.subscribe('presence-check-' + nick, () => {
+                    taken = true; alert("Этот никнейм занят пользователем в сети!");
                     btn.disabled = false; btn.innerText = "ВОЙТИ";
                     temp.close();
                 });
-                sec.publish('check', { nick });
+                chan.publish('is-anybody-here', { nick });
 
                 setTimeout(() => {
-                    if (!isTaken) { temp.close(); this.login(name, nick, Date.now()); }
-                }, 2000);
+                    if(!taken) { temp.close(); this.login(name, nick, Date.now()); }
+                }, 2500);
             },
 
             login(name, nick, time) {
                 this.me = { name, nick, time };
-                localStorage.setItem('v8_n', name); localStorage.setItem('v8_u', nick); localStorage.setItem('v8_t', time);
-                
+                localStorage.setItem('v9_n', name); localStorage.setItem('v9_u', nick); localStorage.setItem('v9_t', time);
                 this.ably = new Ably.Realtime({ key: this.key, clientId: nick });
+                
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('list-screen').style.display = 'flex';
                 document.getElementById('my-info').innerText = `@${nick}`;
                 
-                this.initSecurity();
-                this.listenForGlobalMessages();
+                this.initCore();
                 this.renderList();
             },
 
-            initSecurity() {
-                const sec = this.ably.channels.get('v8-security');
-                sec.subscribe('check', (m) => {
-                    if (m.data.nick === this.me.nick) sec.publish('report-' + this.me.nick, { t: this.me.time });
+            initCore() {
+                const core = this.ably.channels.get('v9-core');
+                
+                // Ответ на проверку ника
+                core.subscribe('is-anybody-here', (m) => {
+                    if(m.data.nick === this.me.nick) core.publish('presence-check-' + this.me.nick, { ok: true });
                 });
-                sec.subscribe('claim-' + this.me.nick, (m) => {
-                    if (m.data.t < this.me.time) { alert("Владелец ника зашел. Выход..."); this.logout(); }
-                    else if (m.data.t > this.me.time) sec.publish('kick-' + this.me.nick, { t: this.me.time });
-                });
-                sec.subscribe('kick-' + this.me.nick, (m) => { if(m.data.t < this.me.time) this.logout(); });
-                sec.publish('claim-' + this.me.nick, { t: this.me.time });
-            },
 
-            // Глобальный слушатель: принимает сообщения, даже если чат закрыт
-            listenForGlobalMessages() {
-                const personal = this.ably.channels.get('notify-' + this.me.nick);
-                personal.subscribe('new-msg', (m) => {
-                    const { from, name, text } = m.data;
-                    
-                    // Добавляем в список чатов только если пришло реальное сообщение
-                    if (!this.chats[from]) {
-                        this.chats[from] = { name: name };
-                        this.save();
+                // Ответ на поиск
+                core.subscribe('find-request', (m) => {
+                    if(m.data.target === this.me.nick) {
+                        core.publish('find-response-' + m.data.from, { nick: this.me.nick, name: this.me.name });
                     }
-                    
-                    this.saveHistory(from, from, text);
-                    
-                    // Если мы сейчас в этом чате - отрисовываем
-                    if (this.currentNick === from) {
-                        this.renderMsg(false, text);
-                    }
-                    
-                    this.renderList();
                 });
+
+                // Персональные уведомления
+                const personal = this.ably.channels.get('v9-notify-' + this.me.nick);
+                personal.subscribe('msg', (m) => {
+                    this.onReceive(m.data.from, m.data.name, m.data.text);
+                });
+
+                // Кик самозванцев
+                core.subscribe('iam-' + this.me.nick, (m) => {
+                    if(m.data.t < this.me.time) this.logout();
+                    else if(m.data.t > this.me.time) core.publish('kick-' + this.me.nick, { t: this.me.time });
+                });
+                core.subscribe('kick-' + this.me.nick, (m) => { if(m.data.t < this.me.time) this.logout(); });
+                core.publish('iam-' + this.me.nick, { t: this.me.time });
             },
 
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 if(!target || target === this.me.nick) return;
                 
-                const glob = this.ably.channels.get('v8-discovery');
-                let found = false;
+                const btn = document.getElementById('search-btn');
+                btn.disabled = true; btn.innerText = "ИЩЕМ...";
                 
-                const sub = glob.subscribe('found-' + this.me.nick, (m) => {
+                const core = this.ably.channels.get('v9-core');
+                let found = false;
+
+                const sub = core.subscribe('find-response-' + this.me.nick, (m) => {
                     if(m.data.nick === target) {
-                        found = true;
-                        this.hideSearch();
-                        // Важно: чат в список НЕ добавляем, пока не напишем
-                        this.openChat(target, m.data.name);
+                        found = true; core.unsubscribe('find-response-' + this.me.nick);
+                        this.hideSearch(); this.openChat(target, m.data.name);
+                        btn.disabled = false; btn.innerText = "ПОИСК";
                     }
                 });
 
-                glob.publish('search', { nick: target, from: this.me.nick });
-                setTimeout(() => { if(!found) alert("Пользователь не в сети"); }, 3000);
+                core.publish('find-request', { target, from: this.me.nick });
+                setTimeout(() => { 
+                    if(!found) { 
+                        alert("Пользователь не в сети"); 
+                        btn.disabled = false; btn.innerText = "ПОИСК";
+                        core.unsubscribe('find-response-' + this.me.nick);
+                    }
+                }, 5000);
             },
 
-            // Ответ на поиск (чтобы нас могли найти)
-            initDiscovery() {
-                const glob = this.ably.channels.get('v8-discovery');
-                glob.subscribe('search', (m) => {
-                    if(m.data.nick === this.me.nick) {
-                        glob.publish('found-' + m.data.from, { nick: this.me.nick, name: this.me.name });
-                    }
-                });
+            onReceive(from, name, text) {
+                if(!this.chats[from]) this.chats[from] = { name };
+                if(!this.history[from]) this.history[from] = [];
+                this.history[from].push({ f: from, t: text });
+                this.save();
+                if(this.currentNick === from) this.renderMsg(false, text);
+                this.renderList();
             },
 
             openChat(nick, name) {
@@ -204,20 +197,8 @@
                 document.getElementById('chat-window').style.display = 'flex';
                 document.getElementById('c-name').innerText = name;
                 document.getElementById('c-avatar').innerText = name[0].toUpperCase();
-                
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 if(this.history[nick]) this.history[nick].forEach(m => this.renderMsg(m.f === this.me.nick, m.t));
-                
-                // Подписка на комнату (для мгновенного обновления когда оба внутри)
-                const roomID = [this.me.nick, nick].sort().join('-v8-');
-                if(this.currentChannel) this.currentChannel.unsubscribe();
-                this.currentChannel = this.ably.channels.get(roomID);
-                this.currentChannel.subscribe('m', (m) => {
-                    if(m.data.f !== this.me.nick) {
-                        // Сообщение уже пришло через глобальный notify, здесь просто дублируем если надо
-                        // Но во избежание дублей лучше оставить отрисовку в notify
-                    }
-                });
             },
 
             send() {
@@ -225,33 +206,18 @@
                 const text = i.value.trim();
                 if(!text || !this.currentNick) return;
 
-                // 1. Сохраняем у себя в списке чатов (теперь он точно появится)
-                if(!this.chats[this.currentNick]) {
-                    const name = document.getElementById('c-name').innerText;
-                    this.chats[this.currentNick] = { name: name };
-                    this.save();
-                }
+                // Сохраняем у себя
+                if(!this.chats[this.currentNick]) this.chats[this.currentNick] = { name: document.getElementById('c-name').innerText };
+                if(!this.history[this.currentNick]) this.history[this.currentNick] = [];
+                this.history[this.currentNick].push({ f: this.me.nick, t: text });
+                this.save();
 
-                // 2. Публикуем в канал уведомлений собеседника (дойдет в любом случае)
-                const targetChannel = this.ably.channels.get('notify-' + this.currentNick);
-                targetChannel.publish('new-msg', { from: this.me.nick, name: this.me.name, text: text });
-
-                // 3. Сохраняем в историю и отрисовываем у себя
-                this.saveHistory(this.currentNick, this.me.nick, text);
+                // Отправляем собеседнику
+                this.ably.channels.get('v9-notify-' + this.currentNick).publish('msg', { from: this.me.nick, name: this.me.name, text });
+                
                 this.renderMsg(true, text);
                 this.renderList();
-                
                 i.value = '';
-            },
-
-            saveHistory(chatWith, from, text) {
-                if(!this.history[chatWith]) this.history[chatWith] = [];
-                // Проверка на дубликаты
-                const last = this.history[chatWith][this.history[chatWith].length-1];
-                if(last && last.f === from && last.t === text) return;
-
-                this.history[chatWith].push({ f: from, t: text });
-                localStorage.setItem('v8_hist', JSON.stringify(this.history));
             },
 
             renderMsg(me, t) {
@@ -263,42 +229,29 @@
 
             renderList() {
                 const c = document.getElementById('chat-items-container'); c.innerHTML = '';
-                const sorted = Object.keys(this.chats);
-                
-                if(sorted.length === 0) {
-                    c.innerHTML = '<center style="margin-top:50px; opacity:0.3;">У вас пока нет чатов</center>';
-                }
-
-                sorted.forEach(n => {
+                for(let n in this.chats) {
                     const h = this.history[n] || [];
                     const last = h.length > 0 ? h[h.length-1].t : "...";
                     const d = document.createElement('div'); d.className = 'chat-item';
                     d.onclick = () => this.openChat(n, this.chats[n].name);
-                    d.innerHTML = `
-                        <div class="avatar">${this.chats[n].name[0].toUpperCase()}</div>
-                        <div class="chat-info">
-                            <div style="font-weight:bold;">${this.chats[n].name} <small style="color:var(--gray);font-weight:normal;">@${n}</small></div>
-                            <div class="last-msg ${this.currentNick === n ? 'read' : ''}">${last}</div>
-                        </div>`;
+                    d.innerHTML = `<div class="avatar">${this.chats[n].name[0].toUpperCase()}</div>
+                        <div class="chat-info"><div style="font-weight:bold;">${this.chats[n].name}</div>
+                        <div class="last-msg">${last}</div></div>`;
                     c.appendChild(d);
-                });
+                }
             },
 
             showSearch() { document.getElementById('search-modal').style.display = 'flex'; },
             hideSearch() { document.getElementById('search-modal').style.display = 'none'; },
-            closeChat() { this.currentNick = ''; document.getElementById('chat-window').style.display = 'none'; this.renderList(); },
-            save() { localStorage.setItem('v8_chats', JSON.stringify(this.chats)); },
+            closeChat() { this.currentNick = ''; document.getElementById('chat-window').style.display = 'none'; },
+            save() { localStorage.setItem('v9_chats', JSON.stringify(this.chats)); localStorage.setItem('v9_hist', JSON.stringify(this.history)); },
             logout() { localStorage.clear(); location.reload(); }
         };
 
         window.onload = () => {
-            const n = localStorage.getItem('v8_n'), u = localStorage.getItem('v8_u'), t = localStorage.getItem('v8_t');
-            if(n && u) {
-                app.login(n, u, parseInt(t));
-                app.initDiscovery(); // Включаем видимость для поиска
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-            }
+            const n = localStorage.getItem('v9_n'), u = localStorage.getItem('v9_u'), t = localStorage.getItem('v9_t');
+            if(n && u) app.login(n, u, parseInt(t));
+            else document.getElementById('auth-screen').style.display = 'flex';
         };
     </script>
 </body>
