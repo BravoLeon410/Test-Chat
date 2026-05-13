@@ -36,8 +36,7 @@
         .input-bar { padding: 12px 15px 40px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 25px; color: #fff; outline: none; }
         .btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; }
-        .btn:disabled { background: #555; cursor: not-allowed; }
-        .exit-btn { font-size: 0.7rem; color: #ff4444; border: 1px solid #ff4444; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
+        .btn:disabled { background: #555; }
     </style>
 </head>
 <body>
@@ -48,7 +47,7 @@
             <input type="text" id="reg-name" placeholder="Ваше Имя" style="margin-bottom:10px; width:100%;">
             <input type="text" id="reg-nick" placeholder="Никнейм (@nick)" style="margin-bottom:20px; width:100%;">
             <button class="btn" id="login-btn" onclick="app.checkNickBeforeLogin()" style="width:100%;">ВОЙТИ</button>
-            <p id="auth-status" style="font-size: 0.8rem; margin-top: 15px; color: var(--accent);"></p>
+            <p id="auth-status" style="font-size: 0.8rem; margin-top: 15px; color: var(--accent); min-height: 20px;"></p>
         </div>
     </div>
 
@@ -58,7 +57,7 @@
                 <span style="font-weight:900; color:var(--accent);">ВСПЫШКА</span><br>
                 <span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span>
             </div>
-            <div class="exit-btn" onclick="app.logout()">ВЫЙТИ</div>
+            <div onclick="app.logout()" style="color:#ff4444; font-size:0.8rem; border:1px solid #ff4444; padding:4px 8px; border-radius:5px;">ВЫЙТИ</div>
         </header>
         <div id="chat-items-container"></div>
         <div class="fab" onclick="app.showSearch()">+</div>
@@ -69,7 +68,7 @@
             <h3 style="color:var(--accent); margin-bottom:15px;">Поиск по нику</h3>
             <input type="text" id="search-input" placeholder="@никнейм..." style="width:100%; margin-bottom:15px;">
             <div id="search-status" style="font-size:0.8rem; margin-bottom:10px; color:var(--gray);"></div>
-            <button class="btn" id="search-btn" onclick="app.findUser()">НАЙТИ</button>
+            <button class="btn" onclick="app.findUser()">НАЙТИ</button>
             <button class="btn" style="background:#333; color:#fff; margin-top:10px;" onclick="app.hideSearch()">ОТМЕНА</button>
         </div>
     </div>
@@ -91,101 +90,102 @@
         const app = {
             key: 'luQxZg.-M9KWA:x7tD3RMvL0N1k2KbITJHZ9hgeluihhpm5yUJeIzYSig',
             ably: null,
-            me: { nick: '', name: '' },
-            current: { nick: '', name: '', channel: null },
+            me: { nick: '', name: '', sid: Math.random().toString(36).substr(2, 9) },
             chats: JSON.parse(localStorage.getItem('vsp_chats_v4') || "{}"),
             history: JSON.parse(localStorage.getItem('vsp_history_v4') || "{}"),
 
-            // Проверка ника перед входом
             checkNickBeforeLogin() {
                 const name = document.getElementById('reg-name').value.trim();
                 const nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
                 const btn = document.getElementById('login-btn');
                 const status = document.getElementById('auth-status');
 
-                if(!name || !nick) return alert("Заполните все поля!");
+                if(!name || !nick) return alert("Заполни поля!");
 
                 btn.disabled = true;
-                btn.innerText = "ПРОВЕРКА НИКА...";
-                status.innerText = "";
-
-                // Временно подключаемся для проверки
+                btn.innerText = "ПРОВЕРКА...";
+                
                 const tempAbly = new Ably.Realtime(this.key);
-                const checkChannel = tempAbly.channels.get('global-v4');
+                const channel = tempAbly.channels.get('security-v4');
                 
                 let isTaken = false;
-                
-                // Слушаем ответ от возможного владельца ника
-                checkChannel.subscribe('presence-check-response-' + nick, (m) => {
+                const sub = channel.subscribe('owner-report-' + nick, (m) => {
                     isTaken = true;
                     btn.disabled = false;
                     btn.innerText = "ВОЙТИ";
-                    status.innerText = "Этот ник уже занят кем-то другим!";
+                    status.innerText = "Ник занят активным пользователем!";
                     tempAbly.close();
                 });
 
-                // Посылаем запрос: "Кто-нибудь использует этот ник?"
-                checkChannel.publish('presence-check-query', { nick: nick });
+                channel.publish('who-is-' + nick, { requester: this.me.sid });
 
-                // Если за 2 секунды никто не ответил, считаем ник свободным
                 setTimeout(() => {
                     if (!isTaken) {
                         tempAbly.close();
                         this.login(name, nick);
                     }
-                }, 2000);
+                }, 2500);
             },
 
             login(name, nick) {
                 this.me.name = name;
                 this.me.nick = nick;
+                localStorage.setItem('f_name', name);
+                localStorage.setItem('f_nick', nick);
 
-                localStorage.setItem('f_name', this.me.name);
-                localStorage.setItem('f_nick', this.me.nick);
-
-                this.ably = new Ably.Realtime({ key: this.key, clientId: this.me.nick });
+                this.ably = new Ably.Realtime({ key: this.key, clientId: nick });
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('list-screen').style.display = 'flex';
-                document.getElementById('my-info').innerText = `@${this.me.nick}`;
+                document.getElementById('my-info').innerText = `@${nick}`;
                 
                 this.renderList();
+                this.startSecurity();
                 this.listenGlobal();
+            },
+
+            startSecurity() {
+                const sec = this.ably.channels.get('security-v4');
+                
+                // Слушаем, не ищет ли кто-то наш ник
+                sec.subscribe('who-is-' + this.me.nick, (m) => {
+                    if (m.data.requester !== this.me.sid) {
+                        sec.publish('owner-report-' + this.me.nick, { sid: this.me.sid });
+                    }
+                });
+
+                // Если кто-то все же вошел с нашим ником (сигнал от другого sid)
+                sec.subscribe('i-am-online-' + this.me.nick, (m) => {
+                    if (m.data.sid !== this.me.sid) {
+                        alert("Этот ник был использован на другом устройстве. Выход...");
+                        this.logout();
+                    }
+                });
+
+                // Каждые 5 секунд подтверждаем, что мы в сети
+                setInterval(() => {
+                    sec.publish('i-am-online-' + this.me.nick, { sid: this.me.sid });
+                }, 5000);
             },
 
             listenGlobal() {
                 const global = this.ably.channels.get('global-v4');
-                
-                // Отвечаем на запросы проверки ника
-                global.subscribe('presence-check-query', (m) => {
-                    if (m.data.nick === this.me.nick) {
-                        global.publish('presence-check-response-' + this.me.nick, { taken: true });
-                    }
-                });
-
                 global.subscribe('ping-' + this.me.nick, (m) => {
                     if(!this.chats[m.data.from]) {
                         this.chats[m.data.from] = m.data.name;
-                        this.save();
-                        this.renderList();
+                        this.save(); this.renderList();
                     }
                     global.publish('pong-' + m.data.from, { nick: this.me.nick, name: this.me.name });
                 });
             },
 
-            // Остальные функции (logout, showSearch, findUser, openChat, send, и т.д.) остаются прежними
-            logout() {
-                if(confirm("Выйти из профиля?")) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            },
             showSearch() { document.getElementById('search-modal').style.display = 'flex'; },
             hideSearch() { document.getElementById('search-modal').style.display = 'none'; },
+            
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 const status = document.getElementById('search-status');
                 if(!target || target === this.me.nick) return;
-                status.innerText = "Поиск...";
+                status.innerText = "Ищем...";
                 const global = this.ably.channels.get('global-v4');
                 let found = false;
                 const timeout = setTimeout(() => { if(!found) status.innerText = "Пользователь не найден"; }, 3000);
@@ -198,6 +198,7 @@
                 });
                 global.publish('ping-' + target, { from: this.me.nick, name: this.me.name });
             },
+
             openChat(nick, name) {
                 this.current.nick = nick; this.current.name = name;
                 document.getElementById('chat-window').style.display = 'flex';
@@ -212,14 +213,16 @@
                     this.renderMsg(m.data.f === this.me.nick, m.data.t);
                 });
             },
+
             saveMessage(chatWith, from, text) {
                 if(!this.history[chatWith]) this.history[chatWith] = [];
-                const isDuplicate = this.history[chatWith].some(m => m.f === from && m.t === text);
-                if(!isDuplicate || from !== this.me.nick) { 
+                const isDup = this.history[chatWith].some(m => m.f === from && m.t === text);
+                if(!isDup || from !== this.me.nick) { 
                     this.history[chatWith].push({ f: from, t: text });
                     localStorage.setItem('vsp_history_v4', JSON.stringify(this.history));
                 }
             },
+
             send() {
                 const i = document.getElementById('m-input');
                 if(!i.value.trim()) return;
@@ -228,6 +231,7 @@
                 this.ably.channels.get('global-v4').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
                 i.value = '';
             },
+
             renderMsg(isMe, text) {
                 const b = document.getElementById('messages');
                 const d = document.createElement('div');
@@ -235,6 +239,7 @@
                 d.innerText = text;
                 b.appendChild(d); b.scrollTop = b.scrollHeight;
             },
+
             renderList() {
                 const c = document.getElementById('chat-items-container'); c.innerHTML = '';
                 for(let n in this.chats) {
@@ -244,8 +249,10 @@
                     c.appendChild(d);
                 }
             },
+
             closeChat() { if(this.current.channel) this.current.channel.unsubscribe(); document.getElementById('chat-window').style.display = 'none'; this.current.nick = ''; },
-            save() { localStorage.setItem('vsp_chats_v4', JSON.stringify(this.chats)); }
+            save() { localStorage.setItem('vsp_chats_v4', JSON.stringify(this.chats)); },
+            logout() { localStorage.clear(); location.reload(); }
         };
 
         window.onload = () => {
