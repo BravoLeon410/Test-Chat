@@ -2,212 +2,249 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Social Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Test Social Network</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root {
-            --bg-color: #121212;
-            --container-bg: #1e1e1e;
-            --accent-color: #ff8c00;
-            --text-color: #e0e0e0;
-            --input-bg: #2b2b2b;
+            --bg-dark: #0a0a0a;
+            --card-bg: #161616;
+            --accent: #ff8c00;
+            --accent-glow: rgba(255, 140, 0, 0.4);
+            --text-main: #ffffff;
+            --text-dim: #888;
         }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Окно входа */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            z-index: 1000;
+            backdrop-filter: blur(15px);
         }
 
-        #chat-container {
+        .login-card {
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 24px;
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            border: 1px solid #333;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .login-card h2 { 
+            margin-bottom: 25px; 
+            color: var(--accent); 
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+        }
+
+        /* Основной интерфейс */
+        #chat-app {
             width: 100%;
-            max-width: 600px;
-            height: 90vh;
-            background: var(--container-bg);
+            max-width: 700px;
             display: flex;
             flex-direction: column;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
-            border: 1px solid #333;
+            background: var(--bg-dark);
         }
 
         header {
-            background: var(--accent-color);
-            color: #000;
-            padding: 15px;
+            padding: 18px;
+            background: rgba(22, 22, 22, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #222;
             text-align: center;
-            font-weight: bold;
-            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         #messages {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            scroll-behavior: smooth;
         }
 
-        .message {
+        /* Пузырьки сообщений */
+        .msg-bubble {
             max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            font-size: 0.95rem;
-            line-height: 1.4;
+            padding: 12px 16px;
+            border-radius: 20px;
+            animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             position: relative;
         }
 
-        .message.received {
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px) scale(0.9); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        .received {
             align-self: flex-start;
-            background: var(--input-bg);
-            border-bottom-left-radius: 2px;
+            background: #222;
+            border-bottom-left-radius: 4px;
         }
 
-        .message.sent {
+        .sent {
             align-self: flex-end;
-            background: var(--accent-color);
+            background: var(--accent);
             color: #000;
-            border-bottom-right-radius: 2px;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px var(--accent-glow);
         }
 
-        .username {
-            font-size: 0.75rem;
-            font-weight: bold;
+        .sender-name {
+            font-size: 0.65rem;
             margin-bottom: 4px;
             display: block;
-            opacity: 0.8;
+            opacity: 0.7;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .input-area {
-            padding: 15px;
-            background: #181818;
+        /* Панель ввода */
+        .input-bar {
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-top: 1px solid #222;
             display: flex;
             gap: 10px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
         }
 
-        input[type="text"] {
+        input {
             flex: 1;
-            background: var(--input-bg);
-            border: 1px solid #444;
-            padding: 12px;
-            border-radius: 8px;
-            color: white;
+            background: #222;
+            border: 1px solid #333;
+            padding: 12px 20px;
+            border-radius: 30px;
+            color: #fff;
             outline: none;
+            font-size: 16px; /* Предотвращает зум на iPhone */
         }
 
-        input[type="text"]:focus {
-            border-color: var(--accent-color);
-        }
+        input:focus { border-color: var(--accent); }
 
         button {
-            background: var(--accent-color);
+            background: var(--accent);
+            color: #000;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
+            padding: 0 20px;
+            border-radius: 30px;
+            font-weight: 800;
             cursor: pointer;
             transition: 0.2s;
         }
 
-        button:hover {
-            transform: scale(1.05);
-            filter: brightness(1.1);
-        }
-
-        /* Окно регистрации */
-        #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .login-box {
-            background: var(--container-bg);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--accent-color);
-        }
+        button:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
-        <div class="login-box">
-            <h2 style="color: var(--accent-color)">Вход в чат</h2>
-            <input type="text" id="username-input" placeholder="Введите ваше имя...">
+        <div class="login-card">
+            <h2>TEST NETWORK</h2>
+            <input type="text" id="user-name" placeholder="Ваше имя..." autocomplete="off">
             <br><br>
-            <button onclick="startChat()">Войти</button>
+            <button onclick="joinChat()" style="width: 100%; height: 50px;">ВОЙТИ</button>
         </div>
     </div>
 
-    <div id="chat-container">
-        <header>TEST CHAT v2.0</header>
+    <div id="chat-app">
+        <header>Test Social Network</header>
         <div id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Напишите сообщение...">
-            <button id="send-btn">Отправить</button>
+        <div class="input-bar">
+            <input type="text" id="msg-input" placeholder="Написать..." autocomplete="off">
+            <button onclick="send()">OK</button>
         </div>
     </div>
 
     <script>
-        // ВСТАВЬ СВОЙ API KEY НИЖЕ
-        const ably = new Ably.Realtime('ВСТАВЬ_СВОЙ_API_KEY_СЮДА'); 
-        const channel = ably.channels.get('chat-room');
-        let myName = "";
+        // Ваш ключ уже вставлен!
+        const API_KEY = 'luQxZg.-M9KWA:x7tD3RMvL0N1k2KbITJHZ9hgeluihhpm5yUJeIzYSig'; 
+        
+        let ably, channel, myName;
 
-        function startChat() {
-            const input = document.getElementById('username-input');
-            if (input.value.trim() !== "") {
-                myName = input.value.trim();
-                document.getElementById('login-overlay').style.display = 'none';
+        function joinChat() {
+            const nameInput = document.getElementById('user-name');
+            const name = nameInput.value.trim();
+            if (name) {
+                myName = name;
+                try {
+                    ably = new Ably.Realtime(API_KEY);
+                    channel = ably.channels.get('main-room');
+                    
+                    channel.subscribe('message', (m) => {
+                        renderMessage(m.data.user, m.data.text);
+                    });
+
+                    document.getElementById('login-overlay').style.display = 'none';
+                    console.log("Вход выполнен успешно");
+                } catch (e) {
+                    alert("Ошибка ключа Ably!");
+                }
+            } else {
+                alert("Введите имя!");
             }
         }
 
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const messagesDiv = document.getElementById('messages');
-
-        function sendMessage() {
-            const text = messageInput.value;
-            if (text.trim() !== "" && myName !== "") {
-                channel.publish('msg', { text: text, user: myName });
-                messageInput.value = '';
+        function send() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (text && channel) {
+                channel.publish('message', { user: myName, text: text });
+                input.value = '';
             }
         }
 
-        sendBtn.onclick = sendMessage;
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        channel.subscribe('msg', (message) => {
-            const data = message.data;
-            const isMe = data.user === myName;
+        function renderMessage(user, text) {
+            const container = document.getElementById('messages');
+            const isMe = user === myName;
             
-            const msgElement = document.createElement('div');
-            msgElement.classList.add('message');
-            msgElement.classList.add(isMe ? 'sent' : 'received');
-            
-            msgElement.innerHTML = `
-                <span class="username">${data.user}</span>
-                <span class="text">${data.text}</span>
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${isMe ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                <span class="sender-name">${user}</span>
+                <span class="msg-text">${text}</span>
             `;
             
-            messagesDiv.appendChild(msgElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Обработка Enter
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (document.getElementById('login-overlay').style.display !== 'none') {
+                    joinChat();
+                } else {
+                    send();
+                }
+            }
         });
     </script>
 </body>
