@@ -33,9 +33,20 @@
         #search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .search-box { background: var(--card); width: 85%; padding: 30px; border-radius: 25px; text-align: center; border: 1px solid #333; }
 
-        /* Стили для кнопок в ряд */
-        .search-btns { display: flex; gap: 10px; margin-top: 20px; }
-        .search-btns .btn { flex: 1; height: 50px; }
+        /* ИСПРАВЛЕННЫЙ БЛОК КНОПОК: СТРОГО В РЯД */
+        .search-btns { 
+            display: flex; 
+            flex-direction: row; /* Направление в ряд */
+            justify-content: space-between; 
+            gap: 12px; 
+            margin-top: 20px; 
+            width: 100%;
+        }
+        .search-btns .btn { 
+            flex: 1; /* Одинаковая ширина */
+            height: 50px; 
+            white-space: nowrap;
+        }
 
         #chat-window { z-index: 1500; }
         .chat-header { padding: 12px 15px; background: var(--card); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #222; }
@@ -47,7 +58,7 @@
 
         .input-bar { padding: 10px 15px 40px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px 20px; border-radius: 30px; color: #fff; outline: none; font-size: 16px; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 10px 22px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 10px 15px; border-radius: 30px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -73,7 +84,8 @@
 
     <div id="search-modal">
         <div class="search-box">
-            <h3 style="color:var(--accent); margin-bottom:20px;">Поиск пользователя</h3>
+            <h3 style="color:var(--accent); margin-bottom:10px;">Поиск пользователя</h3>
+            <p id="search-status" style="font-size: 0.7rem; color: var(--gray); margin-bottom: 15px;">Введите @ник</p>
             <input type="text" id="search-input" placeholder="@ник..." style="width:100%;">
             <div class="search-btns">
                 <button class="btn" id="search-btn" onclick="app.findUser()">НАЙТИ</button>
@@ -176,7 +188,9 @@
                 if(!target || target === this.me.nick) return;
                 
                 const btn = document.getElementById('search-btn');
+                const status = document.getElementById('search-status');
                 btn.disabled = true; btn.innerText = "...";
+                status.innerText = "Отправка запроса...";
                 
                 const auth = this.ably.channels.get('v11-auth');
                 let found = false;
@@ -188,18 +202,25 @@
                         this.hideSearch();
                         this.openChat(target, m.data.name);
                         btn.disabled = false; btn.innerText = "НАЙТИ";
+                        status.innerText = "Введите @ник";
                     }
                 });
 
                 let count = 0;
                 const loop = setInterval(() => {
                     if(found || count >= 3) { clearInterval(loop); return; }
+                    status.innerText = `Попытка ${count + 1} из 3...`;
                     auth.publish('find', { target, from: this.me.nick });
                     count++;
                 }, 1000);
 
                 setTimeout(() => { 
-                    if(!found) { alert("Не в сети"); btn.disabled = false; btn.innerText = "НАЙТИ"; auth.unsubscribe('found-' + this.me.nick); }
+                    if(!found) { 
+                        alert("Не в сети. Проверьте, что приложение открыто на том телефоне."); 
+                        btn.disabled = false; btn.innerText = "НАЙТИ"; 
+                        status.innerText = "Не найден";
+                        auth.unsubscribe('found-' + this.me.nick); 
+                    }
                 }, 5000);
             },
 
