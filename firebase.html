@@ -3,48 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Social Network</title>
+    <title>Вспышка</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #auth-container, #chat-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
-        h2 { text-align: center; color: #333; margin-top: 0; }
-        input { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-        input:focus { border-color: #0088cc; }
-        button { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #0077b5; }
-        .reg-btn { background: #28a745; }
-        .reg-btn:hover { background: #218838; }
-        .logout-btn { background: #dc3545; margin-top: 20px; }
-        #messages { height: 300px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #fafafa; }
-        .msg-item { margin-bottom: 8px; padding: 8px; border-radius: 5px; background: #fff; border-left: 4px solid #0088cc; font-size: 14px; }
-        .msg-author { font-weight: bold; color: #555; display: block; font-size: 12px; }
-        .hidden { display: none; }
+        body { font-family: sans-serif; margin: 0; background-color: #f4f4f9; color: #333; }
+        
+        /* Стили авторизации */
+        #auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .auth-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; }
+        
+        /* Твой прошлый дизайн чата */
+        #chat-screen { display: none; flex-direction: column; height: 100vh; }
+        header { background-color: #0088cc; color: white; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 80%; }
+        .message .author { font-weight: bold; font-size: 0.85em; color: #0088cc; margin-bottom: 3px; }
+        
+        /* Поля и кнопки */
+        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-main { background-color: #0088cc; color: white; }
+        .btn-reg { background-color: #28a745; color: white; margin-top: 5px; }
+        
+        .input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #ddd; }
+        .input-area input { flex: 1; margin: 0 10px 0 0; }
+        .input-area button { width: auto; padding: 0 20px; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="auth-container">
-        <h2>Test Social Network</h2>
-        <input type="email" id="email" placeholder="Электронная почта">
-        <input type="password" id="password" placeholder="Пароль">
-        <button onclick="handleLogin()">Войти</button>
-        <button onclick="handleRegister()" class="reg-btn">Зарегистрироваться</button>
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h2>Вспышка</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <button class="btn-main" onclick="login()">Войти</button>
+            <button class="btn-reg" onclick="register()">Регистрация</button>
+        </div>
     </div>
 
-    <div id="chat-container" class="hidden">
-        <h2 id="welcome-user">Загрузка...</h2>
+    <div id="chat-screen">
+        <header>Вспышка</header>
         <div id="messages"></div>
-        <input type="text" id="message-input" placeholder="Напишите сообщение...">
-        <button onclick="sendMessage()">Отправить</button>
-        <button onclick="handleLogout()" class="logout-btn">Выйти</button>
+        <div class="input-area">
+            <input type="text" id="msg-input" placeholder="Сообщение...">
+            <button class="btn-main" onclick="send()">Отправить</button>
+        </div>
+        <button onclick="logout()" style="background:none; color: gray; font-size: 12px; margin-bottom: 10px;">Выйти из аккаунта</button>
     </div>
 
     <script>
-        // Твой личный конфиг
         const firebaseConfig = {
             apiKey: "AIzaSyCrWLh9mCCZxeYH5sWFdCzwT3U2qgFGMEk",
             authDomain: "messenger-6d45a.firebaseapp.com",
@@ -59,96 +72,61 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Запрос уведомлений при старте
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission();
+        // Уведомления
+        if (Notification.permission !== "granted") Notification.requestPermission();
+
+        function register() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            auth.createUserWithEmailAndPassword(e, p).catch(err => alert(err.message));
         }
 
-        // Логика регистрации
-        function handleRegister() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if(!email || !password) return alert("Заполни все поля!");
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(() => alert("Успех! Теперь войдите под своим паролем."))
-                .catch(error => alert("Ошибка: " + error.message));
+        function login() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
         }
 
-        // Логика входа
-        function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, password)
-                .catch(error => alert("Ошибка входа: " + error.message));
-        }
+        function logout() { auth.signOut(); }
 
-        // Выход
-        function handleLogout() {
-            auth.signOut();
-        }
-
-        // Слушатель состояния (В сети / Не в сети)
+        // Переключение экранов
         auth.onAuthStateChanged(user => {
-            const authCont = document.getElementById('auth-container');
-            const chatCont = document.getElementById('chat-container');
-            
             if (user) {
-                authCont.classList.add('hidden');
-                chatCont.classList.remove('hidden');
-                document.getElementById('welcome-user').innerText = "Привет, " + user.email.split('@')[0];
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('chat-screen').style.display = 'flex';
                 loadMessages();
             } else {
-                authCont.classList.remove('hidden');
-                chatCont.classList.add('hidden');
-                document.getElementById('messages').innerHTML = ""; // очистка при выходе
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('chat-screen').style.display = 'none';
             }
         });
 
-        // Функция уведомления
-        function showNotification(title, body) {
-            if (Notification.permission === "granted" && document.hidden) {
-                const notification = new Notification(title, { 
-                    body: body,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/733/733577.png' 
-                });
-                notification.onclick = function() {
-                    window.focus();
-                    this.close();
-                };
-            }
-        }
-
-        // Отправка в Realtime Database
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value;
+        function send() {
+            const text = document.getElementById('msg-input').value;
             const user = auth.currentUser;
             if (text && user) {
                 db.ref('messages').push({
-                    name: user.email.split('@')[0],
-                    text: text,
-                    uid: user.uid,
-                    timestamp: Date.now()
+                    u: user.email.split('@')[0],
+                    t: text,
+                    uid: user.uid
                 });
-                input.value = '';
+                document.getElementById('msg-input').value = '';
             }
         }
 
-        // Загрузка сообщений в реальном времени
         function loadMessages() {
-            const msgDiv = document.getElementById('messages');
-            db.ref('messages').limitToLast(50).on('child_added', (snapshot) => {
-                const msg = snapshot.val();
-                const item = document.createElement('div');
-                item.className = 'msg-item';
-                item.innerHTML = `<span class="msg-author">${msg.name}</span>${msg.text}`;
-                msgDiv.appendChild(item);
-                msgDiv.scrollTop = msgDiv.scrollHeight;
+            const box = document.getElementById('messages');
+            db.ref('messages').on('child_added', snap => {
+                const data = snap.val();
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.innerHTML = `<div class="author">${data.u}</div><div>${data.t}</div>`;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
 
-                // Уведомление, если чат скрыт и сообщение чужое
-                if (msg.uid !== auth.currentUser.uid) {
-                    showNotification("Новое сообщение в Test Social Network", `${msg.name}: ${msg.text}`);
+                if (data.uid !== auth.currentUser.uid && document.hidden) {
+                    const n = new Notification("Вспышка", { body: `${data.u}: ${data.t}` });
+                    n.onclick = () => { window.focus(); n.close(); };
                 }
             });
         }
