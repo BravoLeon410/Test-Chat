@@ -6,16 +6,30 @@
     <title>ВСПЫШКА</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; }
+        :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; --red: #ff4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; user-select: none; }
         
         input, .msg { user-select: text; -webkit-user-select: text; }
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         
-        header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .nav-btns { display: flex; gap: 10px; align-items: center; }
+        header { padding: 12px 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .nav-btns { display: flex; gap: 8px; align-items: center; }
         
+        /* КРАСИВАЯ КНОПКА СМЕНЫ ИМЕНИ */
+        .btn-name { 
+            background: rgba(255, 140, 0, 0.1); 
+            border: 1px solid var(--accent); 
+            color: var(--accent); 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            font-size: 0.7rem; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+
+        .btn-logout { color: var(--red); font-size: 0.7rem; font-weight: bold; padding: 5px; }
+
         .my-status { padding: 10px 20px; background: #080808; font-size: 0.85rem; border-bottom: 1px solid #111; color: var(--gray); }
         .my-status b { color: var(--accent); }
 
@@ -44,7 +58,6 @@
         .input-bar { padding: 10px 15px 40px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px 20px; border-radius: 30px; color: #fff; outline: none; }
         .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; }
-        .text-btn { font-size: 0.75rem; font-weight: bold; cursor: pointer; padding: 5px; }
     </style>
 </head>
 <body>
@@ -65,10 +78,10 @@
 
     <div id="list-screen" class="screen">
         <header>
-            <b style="color:var(--accent); font-size:1.2rem;">ВСПЫШКА</b>
+            <b style="color:var(--accent); font-size:1.1rem;">ВСПЫШКА</b>
             <div class="nav-btns">
-                <span onclick="app.showEditName()" style="color:var(--accent);" class="text-btn">СМЕНИТЬ ИМЯ</span>
-                <span onclick="app.logout()" style="color:#ff4444;" class="text-btn">ВЫЙТИ</span>
+                <div onclick="app.showEditName()" class="btn-name">Имя</div>
+                <div onclick="app.logout()" class="btn-logout">ВЫХОД</div>
             </div>
         </header>
         <div class="my-status">
@@ -95,7 +108,7 @@
             <input type="text" id="new-name-input" placeholder="Новое имя..." style="width:100%; margin-bottom:20px;">
             <div style="display:flex; gap:10px;">
                 <button class="btn" style="flex:1; background:#333; color:#fff;" onclick="app.toggleModal('edit-name-modal', false)">ОТМЕНА</button>
-                <button class="btn" style="flex:1" onclick="app.saveNewName()">СОХРАНИТЬ</button>
+                <button class="btn" style="flex:1" onclick="app.saveNewName()">ОК</button>
             </div>
         </div>
     </div>
@@ -124,13 +137,15 @@
 
     <script>
         const app = {
+            // Ключ Ably
             key: 'luQxZg.-M9KWA:x7tD3RMvL0N1k2KbITJHZ9hgeluihhpm5yUJeIzYSig',
+            v: 'v_final', // Фиксированная версия протокола для исключения багов
             ably: null,
             me: { name: '', nick: '' },
             currentNick: null,
             lastPushFrom: null,
-            chats: JSON.parse(localStorage.getItem('v20_chats') || "{}"),
-            history: JSON.parse(localStorage.getItem('v20_hist') || "{}"),
+            chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
+            history: JSON.parse(localStorage.getItem('f_hist') || "{}"),
 
             loginAction() {
                 const n = document.getElementById('reg-name').value.trim();
@@ -140,14 +155,18 @@
 
             init(name, nick) {
                 this.me = { name, nick };
-                localStorage.setItem('v20_me', JSON.stringify(this.me));
+                localStorage.setItem('f_me', JSON.stringify(this.me));
                 document.getElementById('my-name-label').innerText = name;
                 document.getElementById('my-nick-label').innerText = '@' + nick;
                 
                 this.ably = new Ably.Realtime({ key: this.key, clientId: nick });
-                this.ably.channels.get('v20-global').presence.enter({ name });
                 
-                this.ably.channels.get('v20-u-' + nick).subscribe('msg', (m) => {
+                // Глобальный канал для поиска
+                const global = this.ably.channels.get(this.v + '-global');
+                global.presence.enter({ name });
+                
+                // Личный канал для входящих сообщений
+                this.ably.channels.get(this.v + '-u-' + nick).subscribe('msg', (m) => {
                     const { from, fromName, text } = m.data;
                     this.chats[from] = { name: fromName };
                     if(!this.history[from]) this.history[from] = [];
@@ -167,16 +186,16 @@
                 const newName = document.getElementById('new-name-input').value.trim();
                 if(!newName) return;
                 this.me.name = newName;
-                localStorage.setItem('v20_me', JSON.stringify(this.me));
+                localStorage.setItem('f_me', JSON.stringify(this.me));
                 document.getElementById('my-name-label').innerText = newName;
-                this.ably.channels.get('v20-global').presence.update({ name: newName });
+                this.ably.channels.get(this.v + '-global').presence.update({ name: newName });
                 this.toggleModal('edit-name-modal', false);
             },
 
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 if(!target || target === this.me.nick) return;
-                this.ably.channels.get('v20-global').presence.get((err, m) => {
+                this.ably.channels.get(this.v + '-global').presence.get((err, m) => {
                     const u = m.find(x => x.clientId === target);
                     if(u) {
                         const name = u.data.name || target;
@@ -185,7 +204,7 @@
                         this.toggleModal('search-modal', false);
                         this.openChat(target, name);
                         this.renderList();
-                    } else alert("Пользователь не найден");
+                    } else alert("Пользователь не в сети");
                 });
             },
 
@@ -224,9 +243,17 @@
                 const i = document.getElementById('m-input');
                 const t = i.value.trim();
                 if(!t || !this.currentNick) return;
+                
                 if(!this.history[this.currentNick]) this.history[this.currentNick] = [];
                 this.history[this.currentNick].push({ f: this.me.nick, t: t });
-                this.ably.channels.get('v20-u-' + this.currentNick).publish('msg', { from: this.me.nick, fromName: this.me.name, text: t });
+                
+                // ОТПРАВКА
+                this.ably.channels.get(this.v + '-u-' + this.currentNick).publish('msg', { 
+                    from: this.me.nick, 
+                    fromName: this.me.name, 
+                    text: t 
+                });
+                
                 this.renderMsg(true, t);
                 this.save();
                 this.renderList();
@@ -259,14 +286,18 @@
             showEditName() { document.getElementById('new-name-input').value = this.me.name; this.toggleModal('edit-name-modal', true); },
             closePush() { document.getElementById('push-notif').classList.remove('show'); },
             closeChat() { this.currentNick = null; document.getElementById('chat-window').style.display = 'none'; },
-            save() { localStorage.setItem('v20_chats', JSON.stringify(this.chats)); localStorage.setItem('v20_hist', JSON.stringify(this.history)); },
+            save() { localStorage.setItem('f_chats', JSON.stringify(this.chats)); localStorage.setItem('f_hist', JSON.stringify(this.history)); },
             logout() { localStorage.clear(); location.reload(); }
         };
 
         window.onload = () => {
-            const saved = localStorage.getItem('v20_me');
-            if(saved) app.init(JSON.parse(saved).name, JSON.parse(saved).nick);
-            else document.getElementById('auth-screen').style.display = 'flex';
+            const saved = localStorage.getItem('f_me');
+            if(saved) {
+                const u = JSON.parse(saved);
+                app.init(u.name, u.nick);
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+            }
         };
     </script>
 </body>
