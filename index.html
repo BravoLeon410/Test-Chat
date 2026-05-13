@@ -7,38 +7,42 @@
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
 
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         #auth-screen { display: flex; justify-content: center; align-items: center; z-index: 1000; }
         
         .auth-box { width: 85%; max-width: 320px; text-align: center; }
-        .auth-box h1 { color: var(--accent); letter-spacing: 4px; margin-bottom: 25px; }
+        .auth-box h1 { color: var(--accent); letter-spacing: 4px; margin-bottom: 25px; font-size: 2.5rem; }
         
         header { padding: 20px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 48px; height: 48px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
+        
+        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .chat-info { flex: 1; overflow: hidden; }
+        .last-msg { font-size: 0.8rem; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        
+        .avatar { width: 48px; height: 48px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; flex-shrink: 0; }
 
-        .fab { position: fixed; bottom: 40px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #000; z-index: 100; }
+        .fab { position: fixed; bottom: 40px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; z-index: 100; box-shadow: 0 5px 15px rgba(255,140,0,0.4); }
 
-        #search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .search-box { background: var(--card); width: 85%; padding: 25px; border-radius: 20px; text-align: center; }
+        #search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .search-box { background: var(--card); width: 85%; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #333; }
 
         #chat-window { z-index: 500; }
         .chat-header { padding: 15px; background: var(--card); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #222; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #050505; }
         
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; word-wrap: break-word; font-size: 16px; }
+        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; word-wrap: break-word; font-size: 16px; position: relative; }
         .in { align-self: flex-start; background: #222; border-bottom-left-radius: 4px; }
         .out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
 
-        .input-bar { padding: 12px 15px 40px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
+        .input-bar { padding: 10px 15px 35px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 25px; color: #fff; outline: none; font-size: 16px; }
         .btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; }
         .btn:disabled { background: #444; color: #888; }
         
-        #auth-status { font-size: 0.8rem; margin-top: 15px; color: #ff4444; min-height: 20px; }
+        #auth-status { font-size: 0.85rem; margin-top: 15px; color: #ff4444; min-height: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -48,7 +52,7 @@
             <h1>ВСПЫШКА</h1>
             <input type="text" id="reg-name" placeholder="Ваше Имя" style="margin-bottom:10px; width:100%;">
             <input type="text" id="reg-nick" placeholder="Никнейм (@nick)" style="margin-bottom:20px; width:100%;">
-            <button class="btn" id="login-btn" onclick="app.checkNickBeforeLogin()" style="width:100%;">ВОЙТИ</button>
+            <button class="btn" id="login-btn" onclick="app.checkNickBeforeLogin()" style="width:100%; height: 50px;">ВОЙТИ</button>
             <p id="auth-status"></p>
         </div>
     </div>
@@ -56,30 +60,30 @@
     <div id="list-screen" class="screen">
         <header>
             <div>
-                <span style="font-weight:900; color:var(--accent);">ВСПЫШКА</span><br>
+                <span style="font-weight:900; color:var(--accent); font-size: 1.2rem;">ВСПЫШКА</span><br>
                 <span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span>
             </div>
-            <div onclick="app.logout()" style="color:#ff4444; font-size:0.8rem; border:1px solid #ff4444; padding:4px 8px; border-radius:5px;">ВЫЙТИ</div>
+            <div onclick="app.logout()" style="color:#ff4444; font-size:0.75rem; border:1px solid #ff4444; padding:5px 10px; border-radius:8px;">ВЫЙТИ</div>
         </header>
-        <div id="chat-items-container"></div>
+        <div id="chat-items-container" style="flex: 1; overflow-y: auto;"></div>
         <div class="fab" onclick="app.showSearch()">+</div>
     </div>
 
     <div id="search-modal">
         <div class="search-box">
-            <h3 style="color:var(--accent); margin-bottom:15px;">Поиск по нику</h3>
+            <h3 style="color:var(--accent); margin-bottom:15px;">Найти собеседника</h3>
             <input type="text" id="search-input" placeholder="@никнейм..." style="width:100%; margin-bottom:15px;">
             <div id="search-status" style="font-size:0.8rem; margin-bottom:10px; color:var(--gray);"></div>
-            <button class="btn" onclick="app.findUser()">НАЙТИ</button>
-            <button class="btn" style="background:#333; color:#fff; margin-top:10px;" onclick="app.hideSearch()">ОТМЕНА</button>
+            <button class="btn" onclick="app.findUser()" style="width: 100%;">НАЙТИ</button>
+            <button class="btn" style="background:#333; color:#fff; margin-top:10px; width: 100%;" onclick="app.hideSearch()">ОТМЕНА</button>
         </div>
     </div>
 
     <div id="chat-window" class="screen">
         <div class="chat-header">
-            <span onclick="app.closeChat()" style="font-size:2rem; color:var(--accent); cursor:pointer; padding: 0 10px;">‹</span>
-            <div id="c-avatar" class="avatar" style="width:35px; height:35px;">?</div>
-            <div id="c-name" style="font-weight:bold;">Имя</div>
+            <span onclick="app.closeChat()" style="font-size:2.5rem; color:var(--accent); cursor:pointer; padding-right: 15px;">‹</span>
+            <div id="c-avatar" class="avatar" style="width:40px; height:40px; font-size: 0.9rem;">?</div>
+            <div id="c-name" style="font-weight:bold; flex: 1;">Имя</div>
         </div>
         <div id="messages"></div>
         <div class="input-bar">
@@ -92,53 +96,53 @@
         const app = {
             key: 'luQxZg.-M9KWA:x7tD3RMvL0N1k2KbITJHZ9hgeluihhpm5yUJeIzYSig',
             ably: null,
-            me: { nick: '', name: '', sid: Math.random().toString(36).substr(2, 9) },
-            chats: JSON.parse(localStorage.getItem('vsp_chats_v5') || "{}"),
-            history: JSON.parse(localStorage.getItem('vsp_history_v5') || "{}"),
+            me: { nick: '', name: '', time: Date.now() },
+            current: { nick: '', channel: null },
+            chats: JSON.parse(localStorage.getItem('v6_chats') || "{}"),
+            history: JSON.parse(localStorage.getItem('v6_history') || "{}"),
 
             checkNickBeforeLogin() {
-                const nameInput = document.getElementById('reg-name').value.trim();
-                const nickInput = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
+                const name = document.getElementById('reg-name').value.trim();
+                const nick = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
                 const btn = document.getElementById('login-btn');
                 const status = document.getElementById('auth-status');
 
-                if(!nameInput || !nickInput) return alert("Заполни все поля!");
+                if(!name || !nick) return alert("Заполни все поля!");
 
                 btn.disabled = true;
                 btn.innerText = "ПРОВЕРКА...";
                 status.innerText = "";
 
                 const tempAbly = new Ably.Realtime(this.key);
-                const channel = tempAbly.channels.get('system-security');
+                const channel = tempAbly.channels.get('v6-security');
                 
-                let nickIsTaken = false;
-
-                // Слушаем скрытый ответ от владельца
-                channel.subscribe('check-nick-reply-' + nickInput, (m) => {
-                    nickIsTaken = true;
+                let taken = false;
+                channel.subscribe('reply-' + nick, () => {
+                    taken = true;
                     btn.disabled = false;
                     btn.innerText = "ВОЙТИ";
-                    status.innerText = "Этот никнейм уже занят!";
+                    status.innerText = "Никнейм уже занят!";
                     tempAbly.close();
                 });
 
-                // Отправляем скрытый запрос "Есть тут кто с таким ником?"
-                channel.publish('check-nick-ask', { nick: nickInput });
+                channel.publish('ask', { nick: nick });
 
-                // Если за 2 секунды тишина - регистрируем
                 setTimeout(() => {
-                    if (!nickIsTaken) {
+                    if (!taken) {
                         tempAbly.close();
-                        this.login(nameInput, nickInput);
+                        this.login(name, nick, Date.now());
                     }
                 }, 2000);
             },
 
-            login(name, nick) {
+            login(name, nick, timestamp) {
                 this.me.name = name;
                 this.me.nick = nick;
-                localStorage.setItem('v5_name', name);
-                localStorage.setItem('v5_nick', nick);
+                this.me.time = timestamp;
+                
+                localStorage.setItem('v6_n', name);
+                localStorage.setItem('v6_u', nick);
+                localStorage.setItem('v6_t', timestamp);
 
                 this.ably = new Ably.Realtime({ key: this.key, clientId: nick });
                 document.getElementById('auth-screen').style.display = 'none';
@@ -147,84 +151,121 @@
                 
                 this.renderList();
                 this.initSecurity();
-                this.listenMessages();
+                this.listenInbound();
             },
 
             initSecurity() {
-                const channel = this.ably.channels.get('system-security');
+                const sec = this.ably.channels.get('v6-security');
                 
-                // Фоновый ответ на запросы проверки (владелец не видит этого)
-                channel.subscribe('check-nick-ask', (m) => {
+                // Кто-то проверяет наш ник
+                sec.subscribe('ask', (m) => {
                     if (m.data.nick === this.me.nick) {
-                        channel.publish('check-nick-reply-' + this.me.nick, { status: 'taken' });
+                        sec.publish('reply-' + this.me.nick, { t: this.me.time });
+                    }
+                });
+
+                // Постоянно слушаем, нет ли "самозванцев"
+                sec.subscribe('iam-' + this.me.nick, (m) => {
+                    // Если у другого человека время регистрации позже нашего
+                    if (m.data.t > this.me.time) {
+                        sec.publish('kick-' + this.me.nick, { t: this.me.time });
+                    } else if (m.data.t < this.me.time) {
+                        // Если мы сами оказались "младше", нас выкидывает
+                        alert("Этот ник принадлежит другому пользователю (он зарегистрировался раньше). Пожалуйста, смените ник.");
+                        this.logout();
+                    }
+                });
+
+                // При входе заявляем о себе
+                sec.publish('iam-' + this.me.nick, { t: this.me.time });
+                
+                // Слушаем команду на "вылет"
+                sec.subscribe('kick-' + this.me.nick, (m) => {
+                    if (m.data.t < this.me.time) {
+                        alert("Владелец ника вошел в сеть. Ваш временный доступ аннулирован.");
+                        this.logout();
                     }
                 });
             },
 
-            listenMessages() {
-                const global = this.ably.channels.get('global-chat-v5');
+            listenInbound() {
+                const global = this.ably.channels.get('v6-global');
                 global.subscribe('ping-' + this.me.nick, (m) => {
                     if(!this.chats[m.data.from]) {
-                        this.chats[m.data.from] = m.data.name;
-                        this.save(); this.renderList();
+                        this.chats[m.data.from] = { name: m.data.name };
                     }
+                    this.save();
+                    this.renderList();
                     global.publish('pong-' + m.data.from, { nick: this.me.nick, name: this.me.name });
                 });
             },
 
             showSearch() { document.getElementById('search-modal').style.display = 'flex'; },
-            hideSearch() { document.getElementById('search-modal').style.display = 'none'; },
+            hideSearch() { document.getElementById('search-modal').style.display = 'none'; document.getElementById('search-status').innerText = ''; },
             
             findUser() {
                 const target = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
                 const status = document.getElementById('search-status');
                 if(!target || target === this.me.nick) return;
-                status.innerText = "Ищем пользователя...";
-                const global = this.ably.channels.get('global-chat-v5');
+                status.innerText = "Ищем...";
+                
+                const global = this.ably.channels.get('v6-global');
                 let found = false;
                 const timeout = setTimeout(() => { if(!found) status.innerText = "Пользователь не найден"; }, 3000);
+                
                 global.subscribe('pong-' + this.me.nick, (m) => {
                     if(m.data.nick === target) {
                         found = true;
-                        this.chats[target] = m.data.name; this.save(); this.renderList();
-                        this.hideSearch(); this.openChat(target, m.data.name);
+                        this.chats[target] = { name: m.data.name };
+                        this.save(); this.renderList();
+                        this.hideSearch();
+                        this.openChat(target, m.data.name);
                     }
                 });
                 global.publish('ping-' + target, { from: this.me.nick, name: this.me.name });
             },
 
             openChat(nick, name) {
-                this.current.nick = nick; this.current.name = name;
+                this.current.nick = nick;
                 document.getElementById('chat-window').style.display = 'flex';
                 document.getElementById('c-name').innerText = name;
                 document.getElementById('c-avatar').innerText = name[0].toUpperCase();
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 
-                if(this.history[nick]) this.history[nick].forEach(msg => this.renderMsg(msg.f === this.me.nick, msg.t));
+                if(this.history[nick]) {
+                    this.history[nick].forEach(m => this.renderMsg(m.f === this.me.nick, m.t));
+                }
                 
-                const id = [this.me.nick, nick].sort().join('-v5-');
+                const id = [this.me.nick, nick].sort().join('-v6-');
+                if(this.current.channel) this.current.channel.unsubscribe();
+                
                 this.current.channel = this.ably.channels.get(id);
                 this.current.channel.subscribe('m', (m) => {
-                    this.saveMessage(nick, m.data.f, m.data.t);
+                    this.saveMsg(nick, m.data.f, m.data.t);
                     this.renderMsg(m.data.f === this.me.nick, m.data.t);
+                    this.renderList(); // Обновить предпросмотр в списке
                 });
             },
 
-            saveMessage(chatWith, from, text) {
+            saveMsg(chatWith, from, text) {
                 if(!this.history[chatWith]) this.history[chatWith] = [];
                 const isDup = this.history[chatWith].some(m => m.f === from && m.t === text);
                 if(!isDup || from !== this.me.nick) { 
                     this.history[chatWith].push({ f: from, t: text });
-                    localStorage.setItem('vsp_history_v5', JSON.stringify(this.history));
+                    localStorage.setItem('v6_history', JSON.stringify(this.history));
                 }
             },
 
             send() {
                 const i = document.getElementById('m-input');
-                if(!i.value.trim()) return;
-                this.current.channel.publish('m', { f: this.me.nick, t: i.value });
-                this.saveMessage(this.current.nick, this.me.nick, i.value);
-                this.ably.channels.get('global-chat-v5').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
+                const val = i.value.trim();
+                if(!val || !this.current.channel) return;
+                
+                this.current.channel.publish('m', { f: this.me.nick, t: val });
+                this.saveMsg(this.current.nick, this.me.nick, val);
+                
+                // Пинг собеседника для обновления его списка
+                this.ably.channels.get('v6-global').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
                 i.value = '';
             },
 
@@ -237,23 +278,40 @@
             },
 
             renderList() {
-                const c = document.getElementById('chat-items-container'); c.innerHTML = '';
-                for(let n in this.chats) {
-                    const d = document.createElement('div'); d.className = 'chat-item';
-                    d.onclick = () => this.openChat(n, this.chats[n]);
-                    d.innerHTML = `<div class="avatar">${this.chats[n][0]}</div><div><b>${this.chats[n]}</b><br><small style="color:var(--gray)">@${n}</small></div>`;
+                const c = document.getElementById('chat-items-container');
+                c.innerHTML = '';
+                for(let nick in this.chats) {
+                    const lastMsgs = this.history[nick] || [];
+                    const lastText = lastMsgs.length > 0 ? lastMsgs[lastMsgs.length-1].t : "Нет сообщений";
+                    const d = document.createElement('div');
+                    d.className = 'chat-item';
+                    d.onclick = () => this.openChat(nick, this.chats[nick].name);
+                    d.innerHTML = `
+                        <div class="avatar">${this.chats[nick].name[0].toUpperCase()}</div>
+                        <div class="chat-info">
+                            <div style="font-weight:bold; display: flex; justify-content: space-between;">
+                                <span>${this.chats[nick].name}</span>
+                                <span style="font-size:0.6rem; opacity:0.4;">@${nick}</span>
+                            </div>
+                            <div class="last-msg">${lastText}</div>
+                        </div>
+                    `;
                     c.appendChild(d);
                 }
             },
 
-            closeChat() { if(this.current.channel) this.current.channel.unsubscribe(); document.getElementById('chat-window').style.display = 'none'; this.current.nick = ''; },
-            save() { localStorage.setItem('vsp_chats_v5', JSON.stringify(this.chats)); },
+            closeChat() { 
+                if(this.current.channel) this.current.channel.unsubscribe();
+                document.getElementById('chat-window').style.display = 'none'; 
+                this.current.nick = ''; 
+            },
+            save() { localStorage.setItem('v6_chats', JSON.stringify(this.chats)); },
             logout() { localStorage.clear(); location.reload(); }
         };
 
         window.onload = () => {
-            const n = localStorage.getItem('v5_name'), u = localStorage.getItem('v5_nick');
-            if(n && u) app.login(n, u);
+            const n = localStorage.getItem('v6_n'), u = localStorage.getItem('v6_u'), t = localStorage.getItem('v6_t');
+            if(n && u) app.login(n, u, parseInt(t));
             else document.getElementById('auth-screen').style.display = 'flex';
         };
     </script>
