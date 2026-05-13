@@ -11,21 +11,34 @@
         :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; --red: #ff4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
+        
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         header { padding: 12px 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Поля ввода с иконкой глаза */
+        .input-group { position: relative; width: 100%; margin-bottom: 10px; }
+        input { width: 100%; background: #1a1a1a; border: 1px solid #333; padding: 12px 45px 12px 20px; border-radius: 30px; color: #fff; outline: none; font-size: 1rem; }
+        input:focus { border-color: var(--accent); }
+        .toggle-pass { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--gray); cursor: pointer; font-size: 0.8rem; user-select: none; }
+
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); opacity: 0.8; }
+        
         .my-status { padding: 10px 20px; background: #080808; font-size: 0.85rem; border-bottom: 1px solid #111; color: var(--gray); }
         .my-status b { color: var(--accent); }
+        
         #chat-list { flex: 1; overflow-y: auto; }
         .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
         .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; flex-shrink: 0; }
+        
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #050505; }
         .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; }
         .in { align-self: flex-start; background: #222; }
         .out { align-self: flex-end; background: var(--accent); color: #000; }
+        
         .input-bar { padding: 10px 15px 40px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
-        input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px 20px; border-radius: 30px; color: #fff; outline: none; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; }
-        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; z-index: 100; }
+        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; z-index: 100; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); }
+        
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; }
         .modal-box { background: var(--card); width: 85%; padding: 30px; border-radius: 25px; border: 1px solid #333; text-align: center; }
     </style>
@@ -35,19 +48,47 @@
     <div id="auth-screen" class="screen" style="display:flex; justify-content:center; align-items:center;">
         <div style="width:85%; text-align:center;">
             <h1 style="color:var(--accent); font-size:2.8rem; margin-bottom:30px;">ВСПЫШКА</h1>
-            <input type="email" id="log-email" placeholder="Email" style="width:100%; margin-bottom:10px;">
-            <input type="password" id="log-pass" placeholder="Пароль" style="width:100%; margin-bottom:20px;">
-            <button class="btn" onclick="app.auth('login')" style="width:100%; height:55px; margin-bottom:10px;">ВОЙТИ</button>
-            <button class="btn" onclick="app.showRegister()" style="width:100%; height:55px; background:#222; color:var(--accent); border:1px solid var(--accent);">СОЗДАТЬ АККАУНТ</button>
+            
+            <div class="input-group">
+                <input type="email" id="log-email" placeholder="Email">
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="log-pass" placeholder="Пароль">
+                <span class="toggle-pass" onclick="app.viewPass('log-pass')">👁️</span>
+            </div>
+
+            <button class="btn" onclick="app.auth('login')" style="width:100%; height:55px; margin-top:10px;">ВОЙТИ</button>
+            <button class="btn" onclick="app.toggleAuthMode(true)" style="width:100%; height:55px; margin-top:10px; background:#222; color:var(--accent); border:1px solid var(--accent);">РЕГИСТРАЦИЯ</button>
+        </div>
+    </div>
+
+    <div id="reg-screen" class="screen" style="display:none; justify-content:center; align-items:center;">
+        <div style="width:85%; text-align:center;">
+            <h2 style="color:var(--accent); margin-bottom:25px;">Создать аккаунт</h2>
+            
+            <input type="email" id="reg-email" placeholder="Email" style="margin-bottom:10px;">
+            
+            <div class="input-group">
+                <input type="password" id="reg-pass1" placeholder="Придумайте пароль">
+                <span class="toggle-pass" onclick="app.viewPass('reg-pass1')">👁️</span>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="reg-pass2" placeholder="Повторите пароль">
+                <span class="toggle-pass" onclick="app.viewPass('reg-pass2')">👁️</span>
+            </div>
+
+            <button class="btn" onclick="app.auth('reg')" style="width:100%; height:55px; margin-top:10px;">ГОТОВО</button>
+            <div onclick="app.toggleAuthMode(false)" style="color:var(--gray); margin-top:20px; font-size:0.9rem;">Назад ко входу</div>
         </div>
     </div>
 
     <div id="complete-profile-screen" class="screen" style="display:none; justify-content:center; align-items:center;">
         <div style="width:85%; text-align:center;">
             <h2 style="color:var(--accent); margin-bottom:20px;">Заверши профиль</h2>
-            <p style="color:var(--gray); margin-bottom:20px;">Придумай ник и имя, чтобы другие могли тебя найти.</p>
-            <input type="text" id="comp-nick" placeholder="@никнейм" style="width:100%; margin-bottom:10px;">
-            <input type="text" id="comp-name" placeholder="Твое имя" style="width:100%; margin-bottom:20px;">
+            <input type="text" id="comp-nick" placeholder="@никнейм" style="margin-bottom:10px;">
+            <input type="text" id="comp-name" placeholder="Твое имя" style="margin-bottom:20px;">
             <button class="btn" onclick="app.completeProfile()" style="width:100%;">СОХРАНИТЬ</button>
         </div>
     </div>
@@ -65,7 +106,7 @@
     <div id="search-modal" class="modal">
         <div class="modal-box">
             <h3 style="color:var(--accent); margin-bottom:20px;">Поиск по @нику</h3>
-            <input type="text" id="search-input" placeholder="@ник..." style="width:100%; margin-bottom:20px;">
+            <input type="text" id="search-input" placeholder="@ник..." style="margin-bottom:20px;">
             <button class="btn" onclick="app.findUser()" style="width:100%;">НАЙТИ</button>
             <button class="btn" onclick="app.toggleModal('search-modal', false)" style="width:100%; margin-top:10px; background:#222;">ОТМЕНА</button>
         </div>
@@ -97,25 +138,47 @@
                 appId: "1:871171819316:web:bfa2459b42a1be9e780761"
             },
 
+            viewPass(id) {
+                const el = document.getElementById(id);
+                el.type = el.type === 'password' ? 'text' : 'password';
+            },
+
+            toggleAuthMode(isReg) {
+                document.getElementById('auth-screen').style.display = isReg ? 'none' : 'flex';
+                document.getElementById('reg-screen').style.display = isReg ? 'flex' : 'none';
+            },
+
             async auth(type) {
-                const e = document.getElementById('log-email').value.trim();
-                const p = document.getElementById('log-pass').value.trim();
-                try {
-                    if(type === 'login') await firebase.auth().signInWithEmailAndPassword(e, p);
-                    else await firebase.auth().createUserWithEmailAndPassword(e, p);
-                    location.reload();
-                } catch(err) { alert(err.message); }
+                if(type === 'reg') {
+                    const e = document.getElementById('reg-email').value.trim();
+                    const p1 = document.getElementById('reg-pass1').value;
+                    const p2 = document.getElementById('reg-pass2').value;
+                    
+                    if(!e) return alert("Введите Email");
+                    if(p1.length < 6) return alert("Пароль должен быть от 6 символов");
+                    if(p1 !== p2) return alert("Пароли не совпадают!");
+                    
+                    try {
+                        await firebase.auth().createUserWithEmailAndPassword(e, p1);
+                        location.reload();
+                    } catch(err) { alert(err.message); }
+                } else {
+                    const e = document.getElementById('log-email').value.trim();
+                    const p = document.getElementById('log-pass').value;
+                    try {
+                        await firebase.auth().signInWithEmailAndPassword(e, p);
+                        location.reload();
+                    } catch(err) { alert(err.message); }
+                }
             },
 
             async completeProfile() {
                 const ni = document.getElementById('comp-nick').value.trim().toLowerCase().replace('@','');
                 const n = document.getElementById('comp-name').value.trim();
                 const user = firebase.auth().currentUser;
-                if(!ni || !n) return alert("Заполни всё!");
-                
+                if(!ni || !n) return alert("Заполни ник и имя!");
                 const check = await firebase.database().ref('users/' + ni).once('value');
-                if(check.exists()) return alert("Ник занят!");
-
+                if(check.exists()) return alert("Этот ник уже занят!");
                 await firebase.database().ref('users/' + ni).set({ name: n, nick: ni, uid: user.uid });
                 await firebase.database().ref('uids/' + user.uid).set({ nick: ni });
                 location.reload();
@@ -125,6 +188,7 @@
                 const uSnap = await firebase.database().ref('uids/' + user.uid).once('value');
                 if(!uSnap.exists()) {
                     document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('reg-screen').style.display = 'none';
                     document.getElementById('complete-profile-screen').style.display = 'flex';
                     return;
                 }
@@ -135,7 +199,7 @@
                 document.getElementById('my-name-label').innerText = this.me.name;
                 document.getElementById('my-nick-label').innerText = '@' + myNick;
                 document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('complete-profile-screen').style.display = 'none';
+                document.getElementById('reg-screen').style.display = 'none';
                 document.getElementById('list-screen').style.display = 'flex';
 
                 firebase.database().ref('inbox/' + myNick).on('child_added', s => {
