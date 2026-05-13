@@ -29,13 +29,14 @@
         .chat-header { padding: 15px; background: var(--card); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #222; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
         
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; }
+        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; word-wrap: break-word; }
         .in { align-self: flex-start; background: #222; border-bottom-left-radius: 4px; }
         .out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
 
         .input-bar { padding: 12px 15px 40px 15px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 25px; color: #fff; outline: none; }
         .btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; }
+        .exit-btn { font-size: 0.7rem; color: #ff4444; border: 1px solid #ff4444; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -51,8 +52,11 @@
 
     <div id="list-screen" class="screen" style="display:flex;">
         <header>
-            <span style="font-weight:900; color:var(--accent);">ВСПЫШКА</span>
-            <span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span>
+            <div>
+                <span style="font-weight:900; color:var(--accent);">ВСПЫШКА</span><br>
+                <span id="my-info" style="font-size:0.7rem; opacity:0.5;"></span>
+            </div>
+            <div class="exit-btn" onclick="app.logout()">ВЫЙТИ</div>
         </header>
         <div id="chat-items-container"></div>
         <div class="fab" onclick="app.showSearch()">+</div>
@@ -70,16 +74,14 @@
 
     <div id="chat-window" class="screen">
         <div class="chat-header">
-            <span onclick="app.closeChat()" style="font-size:2rem; color:var(--accent);">‹</span>
+            <span onclick="app.closeChat()" style="font-size:2rem; color:var(--accent); cursor:pointer;">‹</span>
             <div id="c-avatar" class="avatar" style="width:35px; height:35px;">?</div>
             <div id="c-name" style="font-weight:bold;">Имя</div>
         </div>
         <div id="messages"></div>
-        <div class="input-area">
-            <div class="input-bar">
-                <input type="text" id="m-input" placeholder="Сообщение...">
-                <button class="btn" onclick="app.send()">OK</button>
-            </div>
+        <div class="input-bar">
+            <input type="text" id="m-input" placeholder="Сообщение...">
+            <button class="btn" onclick="app.send()">OK</button>
         </div>
     </div>
 
@@ -89,7 +91,8 @@
             ably: null,
             me: { nick: '', name: '' },
             current: { nick: '', name: '', channel: null },
-            chats: JSON.parse(localStorage.getItem('vsp_chats_final') || "{}"),
+            chats: JSON.parse(localStorage.getItem('vsp_chats_v4') || "{}"),
+            history: JSON.parse(localStorage.getItem('vsp_history_v4') || "{}"),
 
             login() {
                 this.me.name = document.getElementById('reg-name').value.trim();
@@ -107,9 +110,15 @@
                 this.listenGlobal();
             },
 
+            logout() {
+                if(confirm("Выйти из профиля? Все чаты будут стерты.")) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            },
+
             listenGlobal() {
-                // Канал для входящих запросов
-                const global = this.ably.channels.get('global-presence');
+                const global = this.ably.channels.get('global-v4');
                 global.subscribe('ping-' + this.me.nick, (m) => {
                     if(!this.chats[m.data.from]) {
                         this.chats[m.data.from] = m.data.name;
@@ -128,13 +137,13 @@
                 const status = document.getElementById('search-status');
                 if(!target || target === this.me.nick) return;
 
-                status.innerText = "Ищем пользователя...";
-                const global = this.ably.channels.get('global-presence');
+                status.innerText = "Проверка ника...";
+                const global = this.ably.channels.get('global-v4');
                 
                 let found = false;
                 const timeout = setTimeout(() => {
                     if(!found) {
-                        status.innerText = "Пользователь не найден или не в сети";
+                        status.innerText = "Пользователь не найден";
                         global.unsubscribe('pong-' + this.me.nick);
                     }
                 }, 3000);
@@ -151,7 +160,6 @@
                         global.unsubscribe('pong-' + this.me.nick);
                     }
                 });
-
                 global.publish('ping-' + target, { from: this.me.nick, name: this.me.name });
             },
 
@@ -161,20 +169,42 @@
                 document.getElementById('chat-window').style.display = 'flex';
                 document.getElementById('c-name').innerText = name;
                 document.getElementById('c-avatar').innerText = name[0].toUpperCase();
-                document.getElementById('messages').innerHTML = '';
+                
+                const box = document.getElementById('messages');
+                box.innerHTML = '';
+                
+                // Загрузка истории из памяти
+                if(this.history[nick]) {
+                    this.history[nick].forEach(msg => this.renderMsg(msg.f === this.me.nick, msg.t));
+                }
 
-                const id = [this.me.nick, nick].sort().join('-chat-');
+                const id = [this.me.nick, nick].sort().join('-v4-');
                 this.current.channel = this.ably.channels.get(id);
-                this.current.channel.subscribe('m', (m) => this.renderMsg(m.data.f === this.me.nick, m.data.t));
+                this.current.channel.subscribe('m', (m) => {
+                    this.saveMessage(nick, m.data.f, m.data.t);
+                    this.renderMsg(m.data.f === this.me.nick, m.data.t);
+                });
+            },
+
+            saveMessage(chatWith, from, text) {
+                if(!this.history[chatWith]) this.history[chatWith] = [];
+                // Проверка на дубликаты (чтобы не сохранять одно и то же сообщение дважды)
+                const isDuplicate = this.history[chatWith].some(m => m.f === from && m.t === text);
+                if(!isDuplicate || from !== this.me.nick) { 
+                    this.history[chatWith].push({ f: from, t: text });
+                    localStorage.setItem('vsp_history_v4', JSON.stringify(this.history));
+                }
             },
 
             send() {
                 const i = document.getElementById('m-input');
-                if(!i.value.trim()) return;
-                this.current.channel.publish('m', { f: this.me.nick, t: i.value });
+                const text = i.value.trim();
+                if(!text) return;
                 
-                // Дублируем сигнал в глобальный канал, чтобы у собеседника обновился список, если чат не открыт
-                this.ably.channels.get('global-presence').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
+                this.current.channel.publish('m', { f: this.me.nick, t: text });
+                this.saveMessage(this.current.nick, this.me.nick, text);
+                
+                this.ably.channels.get('global-v4').publish('ping-' + this.current.nick, { from: this.me.nick, name: this.me.name });
                 i.value = '';
             },
 
@@ -204,7 +234,7 @@
                 document.getElementById('chat-window').style.display = 'none';
                 this.current.nick = '';
             },
-            save() { localStorage.setItem('vsp_chats_final', JSON.stringify(this.chats)); }
+            save() { localStorage.setItem('vsp_chats_v4', JSON.stringify(this.chats)); }
         };
 
         window.onload = () => {
