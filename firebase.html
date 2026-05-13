@@ -11,23 +11,42 @@
         :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; --red: #ff4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
+        
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         header { padding: 12px 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Статус бар сверху */
         .my-status { padding: 10px 20px; background: #080808; font-size: 0.85rem; border-bottom: 1px solid #111; color: var(--gray); }
         .my-status b { color: var(--accent); }
-        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
+
+        /* Список чатов */
+        #chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; flex-shrink: 0; }
+        .chat-info { flex: 1; overflow: hidden; }
+        .chat-info div { font-weight: bold; }
+        .last-msg { font-size: 0.85rem; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Окно чата */
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #050505; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; }
-        .in { align-self: flex-start; background: #222; }
-        .out { align-self: flex-end; background: var(--accent); color: #000; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; word-wrap: break-word; }
+        .in { align-self: flex-start; background: #222; border-bottom-left-radius: 4px; }
+        .out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
+
+        /* Инпуты */
         .input-bar { padding: 10px 15px 40px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
         input { flex: 1; background: #1a1a1a; border: 1px solid #333; padding: 12px 20px; border-radius: 30px; color: #fff; outline: none; }
         .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+
+        /* Кнопка ПЛЮСИК */
+        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; z-index: 100; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); cursor: pointer; }
+
+        /* Модальные окна */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; }
         .modal-box { background: var(--card); width: 85%; padding: 30px; border-radius: 25px; border: 1px solid #333; text-align: center; }
-        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #000; z-index: 100; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4); }
-        #push-notif { position: fixed; top: -120px; left: 10px; right: 10px; background: #1e1e1e; padding: 15px; border-radius: 12px; z-index: 9999; border-left: 4px solid var(--accent); transition: 0.4s; }
+
+        /* Пуш-уведомление */
+        #push-notif { position: fixed; top: -120px; left: 10px; right: 10px; background: #1e1e1e; padding: 15px; border-radius: 12px; z-index: 9999; border-left: 4px solid var(--accent); transition: 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #push-notif.show { top: 20px; }
     </style>
 </head>
@@ -43,8 +62,8 @@
             <h1 style="color:var(--accent); font-size:2.8rem; margin-bottom:30px;">ВСПЫШКА</h1>
             <input type="email" id="reg-email" placeholder="Email" style="width:100%; margin-bottom:10px;">
             <input type="password" id="reg-pass" placeholder="Пароль" style="width:100%; margin-bottom:10px;">
-            <input type="text" id="reg-nick" placeholder="@никнейм (для поиска)" style="width:100%; margin-bottom:10px;">
-            <input type="text" id="reg-name" placeholder="Ваше имя" style="width:100%; margin-bottom:20px;">
+            <input type="text" id="reg-nick" placeholder="@никнейм (для новых)" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="reg-name" placeholder="Имя (для новых)" style="width:100%; margin-bottom:20px;">
             <button class="btn" onclick="app.auth('login')" style="width:100%; height:55px; margin-bottom:10px;">ВОЙТИ</button>
             <button class="btn" onclick="app.auth('reg')" style="width:100%; height:55px; background:#222; color:var(--accent); border:1px solid var(--accent);">РЕГИСТРАЦИЯ</button>
         </div>
@@ -52,28 +71,17 @@
 
     <div id="list-screen" class="screen">
         <header>
-            <b style="color:var(--accent);">ВСПЫШКА</b>
-            <div onclick="app.logout()" style="color:var(--red); font-size:0.7rem; font-weight:bold; cursor:pointer;">ВЫХОД</div>
+            <b style="color:var(--accent); font-size:1.2rem;">ВСПЫШКА</b>
+            <div onclick="app.logout()" style="color:var(--red); font-size:0.8rem; font-weight:bold;">ВЫХОД</div>
         </header>
         <div class="my-status">Вы: <span id="my-name-label">...</span> <b id="my-nick-label">@nick</b></div>
-        <div id="chat-list" style="flex:1; overflow-y:auto;"></div>
+        <div id="chat-list"></div>
         <div class="fab" onclick="app.toggleModal('search-modal', true)">+</div>
-    </div>
-
-    <div id="search-modal" class="modal">
-        <div class="modal-box">
-            <h3 style="margin-bottom:20px; color:var(--accent)">Найти по @нику</h3>
-            <input type="text" id="search-input" placeholder="@ник..." style="width:100%; margin-bottom:20px;">
-            <div style="display:flex; gap:10px;">
-                <button class="btn" style="flex:1; background:#333;" onclick="app.toggleModal('search-modal', false)">ОТМЕНА</button>
-                <button class="btn" style="flex:1" onclick="app.findUser()">ОК</button>
-            </div>
-        </div>
     </div>
 
     <div id="chat-window" class="screen">
         <header>
-            <div onclick="app.closeChat()" style="color:var(--accent); font-weight:bold; cursor:pointer;">‹ НАЗАД</div>
+            <div onclick="app.closeChat()" style="color:var(--accent); font-weight:bold;">‹ НАЗАД</div>
             <b id="chat-title">Имя</b>
             <div id="chat-avatar" class="avatar" style="width:35px; height:35px; font-size:0.9rem;">?</div>
         </header>
@@ -81,6 +89,17 @@
         <div class="input-bar">
             <input type="text" id="m-input" placeholder="Сообщение...">
             <button class="btn" onclick="app.send()">ОК</button>
+        </div>
+    </div>
+
+    <div id="search-modal" class="modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:20px; color:var(--accent)">Найти @никнейм</h3>
+            <input type="text" id="search-input" placeholder="Введите ник..." style="width:100%; margin-bottom:20px;">
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="flex:1; background:#333;" onclick="app.toggleModal('search-modal', false)">ОТМЕНА</button>
+                <button class="btn" style="flex:1" onclick="app.findUser()">ОК</button>
+            </div>
         </div>
     </div>
 
@@ -100,18 +119,17 @@
             async auth(type) {
                 const e = document.getElementById('reg-email').value.trim();
                 const p = document.getElementById('reg-pass').value.trim();
-                const n = document.getElementById('reg-name').value.trim();
                 const ni = document.getElementById('reg-nick').value.trim().toLowerCase().replace('@','');
+                const n = document.getElementById('reg-name').value.trim();
 
                 try {
                     if(type === 'reg') {
                         if(!ni || !n) return alert("Заполни Ник и Имя!");
                         const check = await firebase.database().ref('users/' + ni).once('value');
-                        if(check.exists()) return alert("Этот ник уже занят!");
-                        
-                        await firebase.auth().createUserWithEmailAndPassword(e, p);
-                        await firebase.database().ref('users/' + ni).set({ name: n, nick: ni, uid: firebase.auth().currentUser.uid });
-                        await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({ nick: ni });
+                        if(check.exists()) return alert("Ник занят!");
+                        const res = await firebase.auth().createUserWithEmailAndPassword(e, p);
+                        await firebase.database().ref('users/' + ni).set({ name: n, nick: ni, uid: res.user.uid });
+                        await firebase.database().ref('uids/' + res.user.uid).set({ nick: ni });
                     } else {
                         await firebase.auth().signInWithEmailAndPassword(e, p);
                     }
@@ -120,24 +138,23 @@
             },
 
             async init(user) {
-                // Находим ник по UID
                 const uSnap = await firebase.database().ref('uids/' + user.uid).once('value');
-                if(!uSnap.exists()) return this.logout();
+                if(!uSnap.exists()) return;
                 const myNick = uSnap.val().nick;
-                
                 const snap = await firebase.database().ref('users/' + myNick).once('value');
                 this.me = snap.val();
-                
+
                 document.getElementById('my-name-label').innerText = this.me.name;
                 document.getElementById('my-nick-label').innerText = '@' + myNick;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('list-screen').style.display = 'flex';
 
+                // Входящие сообщения (Инбокс)
                 firebase.database().ref('inbox/' + myNick).on('child_added', s => {
                     const d = s.val(); if(d.read) return;
                     this.chats[d.from] = { name: d.fromName };
+                    this.save(); this.renderList();
                     this.showPush(d.from, d.fromName, d.text);
-                    this.renderList();
                     s.ref.update({ read: true });
                 });
                 this.renderList();
@@ -145,12 +162,15 @@
 
             async findUser() {
                 const t = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
+                if(!t || t === this.me.nick) return;
                 const s = await firebase.database().ref('users/' + t).once('value');
                 if(s.exists()) {
                     const u = s.val();
                     this.chats[t] = { name: u.name };
-                    this.save(); this.toggleModal('search-modal', false);
-                    this.openChat(t, u.name); this.renderList();
+                    this.save();
+                    this.toggleModal('search-modal', false);
+                    this.openChat(t, u.name);
+                    this.renderList();
                 } else alert("Пользователь не найден");
             },
 
@@ -160,19 +180,23 @@
                 document.getElementById('chat-title').innerText = name;
                 document.getElementById('chat-avatar').innerText = name[0].toUpperCase();
                 const box = document.getElementById('messages'); box.innerHTML = '';
-                const id = [this.me.nick, nick].sort().join('_');
-                firebase.database().ref('chats/'+id).off();
-                firebase.database().ref('chats/'+id).limitToLast(50).on('child_added', s => {
-                    const m = s.val(); this.renderMsg(m.f === this.me.nick, m.t);
+                
+                const chatId = [this.me.nick, nick].sort().join('_');
+                firebase.database().ref('chats/' + chatId).off();
+                firebase.database().ref('chats/' + chatId).on('child_added', s => {
+                    const m = s.val();
+                    this.renderMsg(m.f === this.me.nick, m.t);
                 });
             },
 
             send() {
                 const i = document.getElementById('m-input'), t = i.value.trim();
                 if(!t || !this.currentNick) return;
-                const id = [this.me.nick, this.currentNick].sort().join('_');
-                firebase.database().ref('chats/'+id).push({ f: this.me.nick, t, time: Date.now() });
-                firebase.database().ref('inbox/'+this.currentNick).push({ from: this.me.nick, fromName: this.me.name, text: t, read: false });
+                const chatId = [this.me.nick, this.currentNick].sort().join('_');
+                firebase.database().ref('chats/' + chatId).push({ f: this.me.nick, t: t });
+                firebase.database().ref('inbox/' + this.currentNick).push({
+                    from: this.me.nick, fromName: this.me.name, text: t, read: false
+                });
                 i.value = '';
             },
 
@@ -186,10 +210,10 @@
                 const l = document.getElementById('chat-list'); l.innerHTML = '';
                 for(let id in this.chats) {
                     const d = document.createElement('div'); d.className = 'chat-item';
-                    d.innerHTML = `<div class="avatar" onclick="app.openChat('${id}', '${this.chats[id].name}')">${this.chats[id].name[0].toUpperCase()}</div>
-                        <div style="flex:1" onclick="app.openChat('${id}', '${this.chats[id].name}')">
-                            <div style="font-weight:bold;">${this.chats[id].name}</div>
-                            <div style="color:var(--gray); font-size:0.8rem;">@${id}</div>
+                    d.innerHTML = `<div class="avatar">${this.chats[id].name[0].toUpperCase()}</div>
+                        <div class="chat-info" onclick="app.openChat('${id}', '${this.chats[id].name}')">
+                            <div>${this.chats[id].name}</div>
+                            <div class="last-msg">@${id}</div>
                         </div>`;
                     l.appendChild(d);
                 }
@@ -198,13 +222,14 @@
             showPush(nick, name, txt) {
                 if(this.currentNick === nick || !document.hidden) return;
                 document.getElementById('push-name').innerText = name;
-                document.getElementById('push-text').innerText = txt.slice(0,35);
+                document.getElementById('push-text').innerText = txt.slice(0,30) + '...';
                 document.getElementById('push-notif').classList.add('show');
-                setTimeout(() => document.getElementById('push-notif').classList.remove('show'), 5000);
+                setTimeout(() => document.getElementById('push-notif').classList.remove('show'), 4000);
             },
 
             toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; },
             closeChat() { this.currentNick = null; document.getElementById('chat-window').style.display = 'none'; },
+            openFromPush() { if(this.lastPushFrom) this.openChat(this.lastPushFrom, this.chats[this.lastPushFrom].name); },
             save() { localStorage.setItem('f_chats', JSON.stringify(this.chats)); },
             logout() { firebase.auth().signOut().then(() => { localStorage.clear(); location.reload(); }); }
         };
