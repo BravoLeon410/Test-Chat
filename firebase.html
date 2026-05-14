@@ -18,7 +18,6 @@
         header { padding: 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
         
         .btn { background: var(--accent); color: #000; border: none; padding: 14px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.1s; }
-        .btn:active { transform: scale(0.95); }
 
         #bottom-nav {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -40,7 +39,7 @@
         .chat-item { padding: 15px 20px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
         .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #050505; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; position: relative; user-select: none; }
         .in { align-self: flex-start; background: #222; }
         .out { align-self: flex-end; background: var(--accent); color: #000; }
         .input-bar { padding: 10px 15px 35px; background: var(--card); display: flex; gap: 10px; border-top: 1px solid #222; }
@@ -48,6 +47,12 @@
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; }
         .modal-box { background: var(--card); width: 85%; padding: 30px; border-radius: 25px; text-align: center; }
         input { width: 100%; padding: 15px; border-radius: 30px; background:#1a1a1a; border:1px solid #333; color:#fff; margin-bottom: 10px; outline: none; }
+
+        /* Стили для меню сообщения */
+        .context-menu { position: fixed; background: #222; border-radius: 15px; padding: 10px; display: none; flex-direction: column; z-index: 3000; border: 1px solid #444; width: 200px; }
+        .context-item { padding: 10px; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .context-item:active { background: #333; }
+        .context-item.del { color: var(--red); }
     </style>
 </head>
 <body>
@@ -60,7 +65,6 @@
             <button class="btn" onclick="app.auth('login')" style="width:100%;">ВОЙТИ</button>
             <button onclick="app.toggleAuth(true)" style="background:none; border:none; color:var(--gray); margin-top:15px;">Нет аккаунта? Регистрация</button>
         </div>
-
         <div id="reg-form" style="width:85%; text-align:center; display:none;">
             <h1 style="color:var(--accent); font-size:35px; margin-bottom:20px;">СОЗДАТЬ</h1>
             <input type="email" id="reg-email" placeholder="Email">
@@ -81,7 +85,7 @@
     <div id="settings-screen" class="screen">
         <header><b style="color:var(--accent); font-size:22px;">ПРОФИЛЬ</b></header>
         <div class="profile-card">
-            <div class="info-label">ID пользователя</div>
+            <div class="info-label">ID</div>
             <div id="prof-uid" class="info-value" style="font-size:10px; color:var(--gray);">...</div>
             <div class="info-label">Имя</div>
             <div id="prof-name" class="info-value">...</div>
@@ -95,13 +99,13 @@
 
     <div id="chat-window" class="screen" style="z-index:100; padding-bottom:0;">
         <header>
-            <div onclick="app.closeChat()" style="color:var(--accent); cursor:pointer;">‹ НАЗАД</div>
+            <div onclick="app.closeChat()" style="color:var(--accent); cursor:pointer;"><i class="fas fa-chevron-left"></i> Назад</div>
             <b id="chat-title">Чат</b>
             <div id="chat-avatar" class="avatar" style="width:35px; height:35px; font-size:14px;">?</div>
         </header>
         <div id="messages"></div>
         <div class="input-bar">
-            <input type="text" id="m-input" placeholder="Сообщение..." style="flex:1;">
+            <input type="text" id="m-input" placeholder="Сообщение...">
             <button class="btn" onclick="app.send()">ОК</button>
         </div>
     </div>
@@ -123,18 +127,17 @@
         </div>
     </div>
 
+    <div id="msg-menu" class="context-menu">
+        <div class="context-item" onclick="app.copyMsg()"><i class="fas fa-copy"></i> Копировать</div>
+        <div class="context-item" onclick="app.deleteMsg('me')"><i class="fas fa-trash"></i> Удалить у себя</div>
+        <div id="del-all-btn" class="context-item del" onclick="app.deleteMsg('all')"><i class="fas fa-dumpster"></i> Удалить у всех</div>
+    </div>
+
     <script>
         const app = {
-            me: null, myId: null, currentOpponentId: null, chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
-            conf: {
-                apiKey: "AIzaSyCrWLh9mCCZxeYH5sWFdCzwT3U2qgFGMEk",
-                authDomain: "messenger-6d45a.firebaseapp.com",
-                databaseURL: "https://messenger-6d45a-default-rtdb.firebaseio.com",
-                projectId: "messenger-6d45a",
-                storageBucket: "messenger-6d45a.firebasestorage.app",
-                messagingSenderId: "871171819316",
-                appId: "1:871171819316:web:bfa2459b42a1be9e780761"
-            },
+            me: null, myId: null, currentOpponentId: null, currentMsgId: null, currentMsgText: null, currentMsgIsMe: false,
+            chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
+            conf: { apiKey: "AIzaSyCrWLh9mCCZxeYH5sWFdCzwT3U2qgFGMEk", authDomain: "messenger-6d45a.firebaseapp.com", databaseURL: "https://messenger-6d45a-default-rtdb.firebaseio.com", projectId: "messenger-6d45a", storageBucket: "messenger-6d45a.firebasestorage.app", messagingSenderId: "871171819316", appId: "1:871171819316:web:bfa2459b42a1be9e780761" },
 
             toggleAuth(isReg) {
                 document.getElementById('login-form').style.display = isReg ? 'none' : 'block';
@@ -144,6 +147,7 @@
             tab(name) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('bottom-nav').classList.add('visible'); // Показываем панель в списках
                 if(name === 'chats') {
                     document.getElementById('list-screen').classList.add('active');
                     document.getElementById('btn-chats').classList.add('active');
@@ -164,14 +168,10 @@
             async auth(type) {
                 try {
                     if(type === 'reg') {
-                        const email = document.getElementById('reg-email').value;
-                        const pass = document.getElementById('reg-pass').value;
-                        const name = document.getElementById('reg-name').value;
-                        const nick = document.getElementById('reg-nick').value.toLowerCase().trim();
-                        
+                        const email = document.getElementById('reg-email').value, pass = document.getElementById('reg-pass').value;
+                        const name = document.getElementById('reg-name').value, nick = document.getElementById('reg-nick').value.toLowerCase().trim();
                         const check = await firebase.database().ref('nicknames/' + nick).once('value');
                         if(check.exists()) return alert("Ник занят!");
-
                         const res = await firebase.auth().createUserWithEmailAndPassword(email, pass);
                         await firebase.database().ref('users/' + res.user.uid).set({ name, nick, uid: res.user.uid });
                         await firebase.database().ref('nicknames/' + nick).set(res.user.uid);
@@ -186,37 +186,23 @@
                 this.myId = user.uid;
                 firebase.database().ref('users/' + this.myId).on('value', snap => {
                     this.me = snap.val();
-                    if(!this.me) {
-                        // Если база пустая, заставляем выйти или перерегистрироваться
-                        alert("Профиль не найден. Пожалуйста, зарегистрируйтесь заново.");
-                        this.logout();
-                        return;
-                    }
+                    if(!this.me) return this.logout();
                     document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('bottom-nav').classList.add('visible');
                     this.tab('chats');
                     this.renderList();
                 });
-
-                // Слушаем новые сообщения (инбокс)
                 firebase.database().ref('inbox/' + this.myId).on('child_added', s => {
-                    const d = s.val(); 
-                    this.chats[d.fromId] = { name: d.fromName, nick: d.fromNick };
+                    const d = s.val(); this.chats[d.fromId] = { name: d.fromName, nick: d.fromNick };
                     this.save(); this.renderList();
                 });
             },
 
-            async editName() {
-                const n = prompt("Новое имя:", this.me.name);
-                if(n) await firebase.database().ref('users/' + this.myId).update({ name: n });
-            },
-
+            async editName() { const n = prompt("Новое имя:", this.me.name); if(n) await firebase.database().ref('users/' + this.myId).update({ name: n }); },
             async editNick() {
-                const n = prompt("Новый ник (без @):").toLowerCase().trim();
+                const n = prompt("Новый ник:").toLowerCase().trim();
                 if(!n || n === this.me.nick) return;
                 const check = await firebase.database().ref('nicknames/' + n).once('value');
                 if(check.exists()) return alert("Ник занят!");
-
                 await firebase.database().ref('nicknames/' + this.me.nick).remove();
                 await firebase.database().ref('nicknames/' + n).set(this.myId);
                 await firebase.database().ref('users/' + this.myId).update({ nick: n });
@@ -238,39 +224,72 @@
             openChat(id, name) {
                 this.currentOpponentId = id;
                 document.getElementById('chat-window').classList.add('active');
+                document.getElementById('bottom-nav').classList.remove('visible'); // Прячем панель в чате
                 document.getElementById('chat-title').innerText = name;
                 document.getElementById('chat-avatar').innerText = name[0].toUpperCase();
                 const box = document.getElementById('messages'); box.innerHTML = '';
                 const chatId = [this.myId, id].sort().join('_');
                 
                 firebase.database().ref('chats/' + chatId).off();
-                firebase.database().ref('chats/' + chatId).on('child_added', s => {
-                    const m = s.val(); this.renderMsg(m.f === this.myId, m.t);
+                firebase.database().ref('chats/' + chatId).on('value', snap => {
+                    box.innerHTML = '';
+                    snap.forEach(s => {
+                        const m = s.val(); 
+                        this.renderMsg(s.key, m.f === this.myId, m.t);
+                    });
                 });
             },
 
-            renderMsg(isMe, t) {
+            renderMsg(mid, isMe, t) {
                 const b = document.getElementById('messages'), d = document.createElement('div');
-                d.className = `msg ${isMe ? 'out' : 'in'}`; d.innerText = t;
+                d.className = `msg ${isMe ? 'out' : 'in'}`; d.innerText = t; d.dataset.id = mid;
+                
+                // Долгое нажатие
+                let timer;
+                d.addEventListener('touchstart', e => {
+                    timer = setTimeout(() => this.showMenu(e, mid, t, isMe), 600);
+                });
+                d.addEventListener('touchend', () => clearTimeout(timer));
+                
                 b.appendChild(d); b.scrollTop = b.scrollHeight;
             },
 
-            async send() {
+            showMenu(e, mid, text, isMe) {
+                this.currentMsgId = mid; this.currentMsgText = text; this.currentMsgIsMe = isMe;
+                const menu = document.getElementById('msg-menu');
+                menu.style.display = 'flex';
+                menu.style.top = (e.touches[0].clientY > window.innerHeight - 150 ? e.touches[0].clientY - 150 : e.touches[0].clientY) + 'px';
+                menu.style.left = '50px';
+                document.getElementById('del-all-btn').style.display = isMe ? 'flex' : 'none';
+            },
+
+            copyMsg() { navigator.clipboard.writeText(this.currentMsgText); this.closeMenu(); },
+
+            async deleteMsg(mode) {
+                const chatId = [this.myId, this.currentOpponentId].sort().join('_');
+                if(mode === 'all' && this.currentMsgIsMe) {
+                    await firebase.database().ref(`chats/${chatId}/${this.currentMsgId}`).remove();
+                } else {
+                    // "У себя" — просто визуально скрываем до перезагрузки или в реальном приложении 
+                    // потребовался бы список скрытых ID. В рамках скрипта — удаляем из DOM.
+                    document.querySelector(`[data-id="${this.currentMsgId}"]`).style.display = 'none';
+                }
+                this.closeMenu();
+            },
+
+            send() {
                 const i = document.getElementById('m-input'), t = i.value.trim();
                 if(!t || !this.currentOpponentId) return;
                 const chatId = [this.myId, this.currentOpponentId].sort().join('_');
-                
-                await firebase.database().ref('chats/' + chatId).push({ f: this.myId, t });
-                await firebase.database().ref('inbox/' + this.currentOpponentId).push({ 
-                    fromId: this.myId, fromName: this.me.name, fromNick: this.me.nick, text: t 
+                firebase.database().ref('chats/' + chatId).push({ f: this.myId, t });
+                firebase.database().ref('inbox/' + this.currentOpponentId).update({ 
+                    [this.myId]: { fromId: this.myId, fromName: this.me.name, fromNick: this.me.nick }
                 });
                 i.value = '';
             },
 
             async findUser() {
                 const t = document.getElementById('search-input').value.trim().toLowerCase().replace('@','');
-                if(t === this.me.nick) return alert("Это вы)");
-                
                 const s = await firebase.database().ref('nicknames/' + t).once('value');
                 if(s.exists()) {
                     const uid = s.val();
@@ -282,12 +301,17 @@
                 } else alert("Никто не найден");
             },
 
-            closeChat() { document.getElementById('chat-window').classList.remove('active'); },
+            closeChat() { 
+                document.getElementById('chat-window').classList.remove('active'); 
+                document.getElementById('bottom-nav').classList.add('visible');
+            },
+            closeMenu() { document.getElementById('msg-menu').style.display = 'none'; },
             toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; },
             save() { localStorage.setItem('f_chats', JSON.stringify(this.chats)); },
             logout() { firebase.auth().signOut().then(() => { localStorage.clear(); location.reload(); }); }
         };
 
+        window.onclick = (e) => { if(!e.target.closest('.msg')) app.closeMenu(); };
         window.onload = () => {
             firebase.initializeApp(app.conf);
             firebase.auth().onAuthStateChanged(u => { if(u) app.init(u); else document.getElementById('auth-screen').style.display = 'flex'; });
