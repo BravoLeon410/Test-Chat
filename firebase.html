@@ -17,33 +17,36 @@
         .screen.active { display: flex; }
         header { padding: 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
 
+        /* Поля ввода */
         .input-box { position: relative; width: 100%; margin-bottom: 12px; }
         input { width: 100%; background: #1a1a1a; border: 1px solid #333; padding: 15px 50px 15px 20px; border-radius: 30px; color: #fff; outline: none; font-size: 16px; }
-        .eye { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--gray); cursor: pointer; padding: 5px; }
+        .eye { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--gray); cursor: pointer; }
 
         .btn { background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
-        .btn:active { transform: scale(0.96); }
 
-        /* Плюсик — Идеальный круг и центр */
-        .fab { position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #000; z-index: 100; border: none; box-shadow: 0 4px 15px rgba(255,140,0,0.3); }
+        /* Плюсик */
+        .fab { position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #000; z-index: 100; border: none; }
 
-        /* Профиль */
-        .profile-card { background: var(--card); margin: 15px; padding: 20px; border-radius: 20px; }
-        .prof-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; cursor: pointer; }
-        .prof-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; }
+        /* Список чатов */
+        .chat-item { padding: 15px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
 
-        /* Модалка редактирования */
-        .edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; }
-        .edit-box { background: var(--card); width: 85%; padding: 25px; border-radius: 25px; border: 1px solid #333; text-align: center; }
+        /* Окно чата */
+        #chat-window { z-index: 2000; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; }
+        .msg.out { align-self: flex-end; background: var(--accent); color: #000; }
+        .msg.in { align-self: flex-start; background: #222; color: #fff; }
+
+        /* Модалки */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: 25px; border: 1px solid #333; text-align: center; }
 
         /* Нижняя панель */
         #bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; background: #111; display: none; border-radius: 35px; border: 1px solid #333; z-index: 1000; }
         #bottom-nav.visible { display: flex; }
         .nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); }
         .nav-btn.active { color: var(--accent); }
-
-        .chat-item { padding: 15px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 20px; }
     </style>
 </head>
 <body>
@@ -51,10 +54,7 @@
     <div id="auth-screen" class="screen" style="justify-content:center; padding:30px;">
         <h1 style="color:var(--accent); text-align:center; margin-bottom:40px;">ВСПЫШКА</h1>
         <div class="input-box"><input type="email" id="log-email" placeholder="Email"></div>
-        <div class="input-box">
-            <input type="password" id="log-pass" placeholder="Пароль">
-            <i class="fas fa-eye eye" onclick="app.viewPass('log-pass')"></i>
-        </div>
+        <div class="input-box"><input type="password" id="log-pass" placeholder="Пароль"><i class="fas fa-eye eye" onclick="app.viewPass('log-pass')"></i></div>
         <button class="btn" onclick="app.auth('login')">ВОЙТИ</button>
         <p onclick="app.showScreen('reg-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Создать аккаунт</p>
     </div>
@@ -62,49 +62,64 @@
     <div id="reg-screen" class="screen" style="justify-content:center; padding:30px;">
         <h2 style="color:var(--accent); text-align:center; margin-bottom:30px;">РЕГИСТРАЦИЯ</h2>
         <div class="input-box"><input type="email" id="reg-email" placeholder="Email"></div>
-        <div class="input-box">
-            <input type="password" id="reg-pass1" placeholder="Пароль">
-            <i class="fas fa-eye eye" onclick="app.viewPass('reg-pass1')"></i>
-        </div>
-        <div class="input-box">
-            <input type="password" id="reg-pass2" placeholder="Повторите пароль">
-            <i class="fas fa-eye eye" onclick="app.viewPass('reg-pass2')"></i>
-        </div>
-        <button class="btn" onclick="app.auth('reg')">СОЗДАТЬ АККАУНТ</button>
-        <p onclick="app.showScreen('auth-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Назад ко входу</p>
+        <div class="input-box"><input type="password" id="reg-pass1" placeholder="Пароль"><i class="fas fa-eye eye" onclick="app.viewPass('reg-pass1')"></i></div>
+        <div class="input-box"><input type="password" id="reg-pass2" placeholder="Повтор пароля"><i class="fas fa-eye eye" onclick="app.viewPass('reg-pass2')"></i></div>
+        <button class="btn" onclick="app.auth('reg')">СОЗДАТЬ</button>
+        <p onclick="app.showScreen('auth-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Назад</p>
     </div>
 
     <div id="list-screen" class="screen">
         <header><b style="color:var(--accent); font-size:22px;">ВСПЫШКА</b></header>
         <div id="chat-list" style="flex:1; overflow-y:auto;"></div>
-        <button class="fab" onclick="alert('Поиск собеседника временно в разработке')">
-            <i class="fas fa-plus"></i>
-        </button>
+        <button class="fab" onclick="app.toggleModal('search-modal', true)"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <div id="chat-window" class="screen">
+        <header>
+            <i class="fas fa-arrow-left" onclick="app.tab('chats')"></i>
+            <b id="chat-title">Чат</b>
+            <div style="width:20px;"></div>
+        </header>
+        <div id="messages"></div>
+        <div style="padding:15px; display:flex; gap:10px; background:var(--card);">
+            <input type="text" id="m-input" placeholder="Сообщение..." style="margin-bottom:0;">
+            <button onclick="app.send()" style="background:var(--accent); border:none; width:50px; border-radius:50%; color:#000;"><i class="fas fa-paper-plane"></i></button>
+        </div>
     </div>
 
     <div id="settings-screen" class="screen">
-        <header><b style="color:var(--accent);">МОЙ ПРОФИЛЬ</b></header>
-        <div class="profile-card">
-            <div class="prof-row" onclick="app.openEdit('name')">
-                <div><div class="prof-label">ИМЯ</div><div id="p-name">...</div></div>
-                <i class="fas fa-pen" style="color:var(--gray); font-size:14px;"></i>
+        <header><b style="color:var(--accent);">ПРОФИЛЬ</b></header>
+        <div style="background:var(--card); margin:15px; padding:20px; border-radius:25px;">
+            <div onclick="app.openEdit('name')" style="margin-bottom:20px;">
+                <div style="font-size:11px; color:var(--accent);">ИМЯ</div>
+                <div id="p-name" style="font-size:18px;">...</div>
             </div>
-            <div class="prof-row" onclick="app.openEdit('nick')">
-                <div><div class="prof-label">НИКНЕЙМ</div><div id="p-nick">@...</div></div>
-                <i class="fas fa-at" style="color:var(--gray); font-size:14px;"></i>
+            <div onclick="app.openEdit('nick')" style="margin-bottom:20px;">
+                <div style="font-size:11px; color:var(--accent);">НИКНЕЙМ</div>
+                <div id="p-nick" style="font-size:18px;">@...</div>
             </div>
-            <div class="prof-row" style="border:none;">
-                <div><div class="prof-label">EMAIL</div><div id="p-email">••••••••••••</div></div>
-                <button onclick="app.showEmail()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 10px; border-radius:10px; font-size:10px;">ПОКАЗАТЬ</button>
+            <div>
+                <div style="font-size:11px; color:var(--accent);">ПОЧТА</div>
+                <div id="p-email" style="font-size:16px; margin-bottom:10px;">••••••••••••</div>
+                <button id="email-btn" onclick="app.toggleEmail()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 12px; border-radius:10px; font-size:11px;">ПОКАЗАТЬ</button>
             </div>
         </div>
-        <button onclick="app.logout()" style="margin:0 15px; color:var(--red); background:none; border:none; font-weight:bold; padding:10px;">ВЫЙТИ ИЗ АККАУНТА</button>
+        <button onclick="app.logout()" style="color:var(--red); background:none; border:none; margin:10px 20px; font-weight:bold;">ВЫЙТИ</button>
     </div>
 
-    <div id="edit-modal" class="edit-modal">
-        <div class="edit-box">
+    <div id="search-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--accent); margin-bottom:15px;">Найти человека</h3>
+            <div class="input-box"><input type="text" id="s-input" placeholder="Ник без @"></div>
+            <button class="btn" onclick="app.findUser()">НАЙТИ И НАПИСАТЬ</button>
+            <button class="btn" style="background:#222; color:#fff; margin-top:10px;" onclick="app.toggleModal('search-modal', false)">ОТМЕНА</button>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
             <h3 id="edit-title" style="color:var(--accent); margin-bottom:15px;">Изменить</h3>
-            <div class="input-box"><input type="text" id="edit-input" placeholder="..."></div>
+            <div class="input-box"><input type="text" id="edit-input"></div>
             <button class="btn" id="edit-confirm-btn">СОХРАНИТЬ</button>
             <button class="btn" style="background:#222; color:#fff; margin-top:10px;" onclick="app.closeEdit()">ОТМЕНА</button>
         </div>
@@ -117,59 +132,44 @@
 
     <script>
         const app = {
-            me: null, chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
+            me: null, chats: JSON.parse(localStorage.getItem('f_chats') || "{}"), activeChat: null,
             conf: { apiKey: "AIzaSyCrWLh9mCCZxeYH5sWFdCzwT3U2qgFGMEk", authDomain: "messenger-6d45a.firebaseapp.com", databaseURL: "https://messenger-6d45a-default-rtdb.firebaseio.com", projectId: "messenger-6d45a", storageBucket: "messenger-6d45a.firebasestorage.app", messagingSenderId: "871171819316", appId: "1:871171819316:web:bfa2459b42a1be9e780761" },
 
             showScreen(id) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                const target = document.getElementById(id);
-                if(target) target.classList.add('active');
-                
+                document.getElementById(id).classList.add('active');
                 const nav = document.getElementById('bottom-nav');
-                if(id === 'list-screen' || id === 'settings-screen') nav.classList.add('visible');
-                else nav.classList.remove('visible');
+                nav.className = (id === 'list-screen' || id === 'settings-screen') ? 'visible' : '';
             },
 
             viewPass(id) {
-                const x = document.getElementById(id);
-                x.type = x.type === "password" ? "text" : "password";
+                const x = document.getElementById(id); x.type = x.type === "password" ? "text" : "password";
             },
 
             async auth(type) {
                 try {
-                    if(type === 'login') {
-                        const e = document.getElementById('log-email').value;
-                        const p = document.getElementById('log-pass').value;
-                        await firebase.auth().signInWithEmailAndPassword(e, p);
-                    } else {
-                        const e = document.getElementById('reg-email').value;
-                        const p1 = document.getElementById('reg-pass1').value;
-                        const p2 = document.getElementById('reg-pass2').value;
-                        if(p1 !== p2) return alert("Пароли не совпадают!");
-                        await firebase.auth().createUserWithEmailAndPassword(e, p1);
-                    }
+                    const e = document.getElementById(type === 'login' ? 'log-email' : 'reg-email').value;
+                    const p1 = document.getElementById(type === 'login' ? 'log-pass' : 'reg-pass1').value;
+                    if(type === 'reg' && p1 !== document.getElementById('reg-pass2').value) return alert("Пароли разные!");
+                    if(type === 'login') await firebase.auth().signInWithEmailAndPassword(e, p1);
+                    else await firebase.auth().createUserWithEmailAndPassword(e, p1);
                     location.reload();
                 } catch(e) { alert(e.message); }
             },
 
             async init(user) {
                 const uSnap = await firebase.database().ref('uids/' + user.uid).once('value');
-                if(!uSnap.exists()) return this.showScreen('reg-screen'); // Если нет ника, отправляем на регу/настройку
-                
-                const myNick = uSnap.val().nick;
-                const snap = await firebase.database().ref('users/' + myNick).once('value');
-                this.me = snap.val();
-                
+                if(!uSnap.exists()) return alert("Ошибка: ник не найден. Зарегистрируйтесь заново.");
+                this.me = (await firebase.database().ref('users/' + uSnap.val().nick).once('value')).val();
                 this.tab('chats');
+                this.listenInbox();
+            },
 
-                // Восстановление и прослушка новых чатов
-                firebase.database().ref('inbox/' + myNick).on('child_added', s => {
-                    const d = s.val();
-                    if(!this.chats[d.from]) {
-                        this.chats[d.from] = { name: d.fromName || d.from };
-                        localStorage.setItem('f_chats', JSON.stringify(this.chats));
-                        this.renderList();
-                    }
+            listenInbox() {
+                firebase.database().ref('inbox/' + this.me.nick).on('child_added', s => {
+                    const d = s.val(); this.chats[d.from] = { name: d.fromName };
+                    localStorage.setItem('f_chats', JSON.stringify(this.chats));
+                    this.renderList();
                 });
                 this.renderList();
             },
@@ -178,86 +178,95 @@
                 const l = document.getElementById('chat-list'); l.innerHTML = '';
                 Object.keys(this.chats).forEach(id => {
                     const d = document.createElement('div'); d.className = 'chat-item';
+                    d.onclick = () => this.openChat(id, this.chats[id].name);
                     d.innerHTML = `<div class="avatar">${this.chats[id].name[0].toUpperCase()}</div>
-                        <div style="flex:1"><b>${this.chats[id].name}</b><br><small style="color:var(--gray)">@${id}</small></div>`;
+                        <div><b>${this.chats[id].name}</b><br><small style="color:var(--gray)">@${id}</small></div>`;
                     l.appendChild(d);
                 });
             },
 
+            openChat(id, name) {
+                this.activeChat = id;
+                document.getElementById('chat-title').innerText = name;
+                this.showScreen('chat-window');
+                const b = document.getElementById('messages'); b.innerHTML = '';
+                const chatId = [this.me.nick, id].sort().join('_');
+                firebase.database().ref('chats/' + chatId).off();
+                firebase.database().ref('chats/' + chatId).on('child_added', s => {
+                    const m = s.val();
+                    const d = document.createElement('div');
+                    d.className = 'msg ' + (m.from === this.me.nick ? 'out' : 'in');
+                    d.innerText = m.text;
+                    b.appendChild(d); b.scrollTop = b.scrollHeight;
+                });
+            },
+
+            async send() {
+                const i = document.getElementById('m-input'), t = i.value.trim();
+                if(!t || !this.activeChat) return;
+                const chatId = [this.me.nick, this.activeChat].sort().join('_');
+                const m = { from: this.me.nick, text: t, time: Date.now() };
+                await firebase.database().ref('chats/' + chatId).push(m);
+                await firebase.database().ref('inbox/' + this.activeChat + '/' + this.me.nick).set({ from: this.me.nick, fromName: this.me.name });
+                i.value = '';
+            },
+
+            async findUser() {
+                const n = document.getElementById('s-input').value.trim().toLowerCase();
+                if(n === this.me.nick) return alert("Это вы!");
+                const s = await firebase.database().ref('users/' + n).once('value');
+                if(!s.exists()) return alert("Пользователь не найден");
+                this.toggleModal('search-modal', false);
+                this.openChat(n, s.val().name);
+            },
+
             tab(t) {
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                if(t === 'chats') {
-                    this.showScreen('list-screen');
-                    document.getElementById('b-chats').classList.add('active');
-                } else {
-                    this.showScreen('settings-screen');
-                    document.getElementById('b-prof').classList.add('active');
-                    this.updateUI();
-                }
+                if(t === 'chats') { this.showScreen('list-screen'); document.getElementById('b-chats').classList.add('active'); }
+                else { this.showScreen('settings-screen'); document.getElementById('b-prof').classList.add('active'); this.updateUI(); }
             },
 
             updateUI() {
-                if(!this.me) return;
                 document.getElementById('p-name').innerText = this.me.name;
                 document.getElementById('p-nick').innerText = '@' + this.me.nick;
             },
 
-            showEmail() {
-                document.getElementById('p-email').innerText = firebase.auth().currentUser.email;
+            toggleEmail() {
+                const p = document.getElementById('p-email'), b = document.getElementById('email-btn');
+                if(b.innerText === 'ПОКАЗАТЬ') { p.innerText = firebase.auth().currentUser.email; b.innerText = 'СКРЫТЬ'; }
+                else { p.innerText = '••••••••••••'; b.innerText = 'ПОКАЗАТЬ'; }
             },
 
+            toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; },
+            
             openEdit(type) {
-                const modal = document.getElementById('edit-modal');
-                const input = document.getElementById('edit-input');
-                const title = document.getElementById('edit-title');
-                const btn = document.getElementById('edit-confirm-btn');
-                modal.style.display = 'flex';
-                if(type === 'name') {
-                    title.innerText = "Изменить имя";
-                    input.value = this.me.name;
-                    btn.onclick = () => this.saveEdit('name');
-                } else {
-                    title.innerText = "Изменить ник";
-                    input.value = this.me.nick;
-                    btn.onclick = () => this.saveEdit('nick');
-                }
+                const m = document.getElementById('edit-modal'), i = document.getElementById('edit-input'), t = document.getElementById('edit-title'), b = document.getElementById('edit-confirm-btn');
+                m.style.display = 'flex';
+                if(type === 'name') { t.innerText = "Имя"; i.value = this.me.name; b.onclick = () => this.saveEdit('name'); }
+                else { t.innerText = "Никнейм"; i.value = this.me.nick; b.onclick = () => this.saveEdit('nick'); }
             },
-
-            closeEdit() { document.getElementById('edit-modal').style.display = 'none'; },
 
             async saveEdit(type) {
-                const val = document.getElementById('edit-input').value.trim();
-                if(!val) return;
-                try {
-                    if(type === 'name') {
-                        await firebase.database().ref('users/' + this.me.nick).update({ name: val });
-                        this.me.name = val;
-                    } else {
-                        const newNick = val.toLowerCase().replace('@','');
-                        if(newNick === this.me.nick) return this.closeEdit();
-                        const check = await firebase.database().ref('users/' + newNick).once('value');
-                        if(check.exists()) return alert("Ник занят!");
-                        
-                        const oldNick = this.me.nick;
-                        await firebase.database().ref('users/' + newNick).set({ ...this.me, nick: newNick });
-                        await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({ nick: newNick });
-                        await firebase.database().ref('users/' + oldNick).remove();
-                        this.me.nick = newNick;
-                    }
-                    this.updateUI();
-                    this.closeEdit();
-                } catch(e) { alert("Ошибка сохранения"); }
+                const v = document.getElementById('edit-input').value.trim();
+                if(type === 'name') { await firebase.database().ref('users/' + this.me.nick).update({name: v}); this.me.name = v; }
+                else { 
+                    const n = v.toLowerCase().replace('@','');
+                    const check = await firebase.database().ref('users/' + n).once('value');
+                    if(check.exists()) return alert("Занят!");
+                    await firebase.database().ref('users/' + n).set({...this.me, nick: n});
+                    await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({nick: n});
+                    await firebase.database().ref('users/' + this.me.nick).remove();
+                    this.me.nick = n;
+                }
+                this.updateUI(); this.closeEdit();
             },
-
+            closeEdit() { document.getElementById('edit-modal').style.display = 'none'; },
             logout() { firebase.auth().signOut().then(() => { localStorage.clear(); location.reload(); }); }
         };
 
         window.onload = () => {
             firebase.initializeApp(app.conf);
-            firebase.auth().onAuthStateChanged(user => {
-                if(user) app.init(user); 
-                else app.showScreen('auth-screen');
-            });
+            firebase.auth().onAuthStateChanged(u => u ? app.init(u) : app.showScreen('auth-screen'));
         };
     </script>
 </body>
