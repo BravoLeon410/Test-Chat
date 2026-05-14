@@ -13,30 +13,26 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
         
-        /* Экраны */
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         .screen.active { display: flex; }
         header { padding: 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Поля ввода */
         .input-box { position: relative; width: 100%; margin-bottom: 12px; }
         input { width: 100%; background: #1a1a1a; border: 1px solid #333; padding: 15px 50px 15px 20px; border-radius: 30px; color: #fff; outline: none; font-size: 16px; }
-        input:focus { border-color: var(--accent); }
-        .eye { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--gray); cursor: pointer; }
+        .eye { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--gray); cursor: pointer; padding: 5px; }
 
-        /* Кнопки */
-        .btn { background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.1s; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
         .btn:active { transform: scale(0.96); }
 
-        /* Плюсик — Идеальная центровка */
+        /* Плюсик — Идеальный круг и центр */
         .fab { position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #000; z-index: 100; border: none; box-shadow: 0 4px 15px rgba(255,140,0,0.3); }
 
         /* Профиль */
         .profile-card { background: var(--card); margin: 15px; padding: 20px; border-radius: 20px; }
-        .prof-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .prof-label { font-size: 12px; color: var(--accent); margin-bottom: 4px; }
+        .prof-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; cursor: pointer; }
+        .prof-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; }
 
-        /* Кастомная модалка редактирования */
+        /* Модалка редактирования */
         .edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .edit-box { background: var(--card); width: 85%; padding: 25px; border-radius: 25px; border: 1px solid #333; text-align: center; }
 
@@ -46,9 +42,8 @@
         .nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); }
         .nav-btn.active { color: var(--accent); }
 
-        /* Список чатов */
         .chat-item { padding: 15px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
+        .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 20px; }
     </style>
 </head>
 <body>
@@ -75,39 +70,41 @@
             <input type="password" id="reg-pass2" placeholder="Повторите пароль">
             <i class="fas fa-eye eye" onclick="app.viewPass('reg-pass2')"></i>
         </div>
-        <button class="btn" onclick="app.auth('reg')">СОЗДАТЬ</button>
-        <p onclick="app.showScreen('auth-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Назад</p>
+        <button class="btn" onclick="app.auth('reg')">СОЗДАТЬ АККАУНТ</button>
+        <p onclick="app.showScreen('auth-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Назад ко входу</p>
     </div>
 
     <div id="list-screen" class="screen">
-        <header><b style="color:var(--accent); font-size:20px;">ВСПЫШКА</b></header>
+        <header><b style="color:var(--accent); font-size:22px;">ВСПЫШКА</b></header>
         <div id="chat-list" style="flex:1; overflow-y:auto;"></div>
-        <button class="fab" onclick="alert('Поиск скоро появится!')"><i class="fas fa-plus"></i></button>
+        <button class="fab" onclick="alert('Поиск собеседника временно в разработке')">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
 
     <div id="settings-screen" class="screen">
-        <header><b style="color:var(--accent);">ПРОФИЛЬ</b></header>
+        <header><b style="color:var(--accent);">МОЙ ПРОФИЛЬ</b></header>
         <div class="profile-card">
             <div class="prof-row" onclick="app.openEdit('name')">
                 <div><div class="prof-label">ИМЯ</div><div id="p-name">...</div></div>
-                <i class="fas fa-pen" style="color:var(--gray)"></i>
+                <i class="fas fa-pen" style="color:var(--gray); font-size:14px;"></i>
             </div>
             <div class="prof-row" onclick="app.openEdit('nick')">
                 <div><div class="prof-label">НИКНЕЙМ</div><div id="p-nick">@...</div></div>
-                <i class="fas fa-at" style="color:var(--gray)"></i>
+                <i class="fas fa-at" style="color:var(--gray); font-size:14px;"></i>
             </div>
             <div class="prof-row" style="border:none;">
                 <div><div class="prof-label">EMAIL</div><div id="p-email">••••••••••••</div></div>
-                <button onclick="app.showEmail()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:4px 8px; border-radius:10px; font-size:10px;">ПОКАЗАТЬ</button>
+                <button onclick="app.showEmail()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 10px; border-radius:10px; font-size:10px;">ПОКАЗАТЬ</button>
             </div>
         </div>
-        <button onclick="app.logout()" style="margin:0 15px; color:var(--red); background:none; border:none; font-weight:bold; cursor:pointer;">ВЫЙТИ ИЗ АККАУНТА</button>
+        <button onclick="app.logout()" style="margin:0 15px; color:var(--red); background:none; border:none; font-weight:bold; padding:10px;">ВЫЙТИ ИЗ АККАУНТА</button>
     </div>
 
     <div id="edit-modal" class="edit-modal">
         <div class="edit-box">
             <h3 id="edit-title" style="color:var(--accent); margin-bottom:15px;">Изменить</h3>
-            <div class="input-box"><input type="text" id="edit-input"></div>
+            <div class="input-box"><input type="text" id="edit-input" placeholder="..."></div>
             <button class="btn" id="edit-confirm-btn">СОХРАНИТЬ</button>
             <button class="btn" style="background:#222; color:#fff; margin-top:10px;" onclick="app.closeEdit()">ОТМЕНА</button>
         </div>
@@ -125,8 +122,8 @@
 
             showScreen(id) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                const el = document.getElementById(id);
-                if(el) el.classList.add('active');
+                const target = document.getElementById(id);
+                if(target) target.classList.add('active');
                 
                 const nav = document.getElementById('bottom-nav');
                 if(id === 'list-screen' || id === 'settings-screen') nav.classList.add('visible');
@@ -140,14 +137,16 @@
 
             async auth(type) {
                 try {
-                    const e = document.getElementById(type === 'login' ? 'log-email' : 'reg-email').value;
-                    const p1 = document.getElementById(type === 'login' ? 'log-pass' : 'reg-pass1').value;
-                    if(type === 'reg') {
+                    if(type === 'login') {
+                        const e = document.getElementById('log-email').value;
+                        const p = document.getElementById('log-pass').value;
+                        await firebase.auth().signInWithEmailAndPassword(e, p);
+                    } else {
+                        const e = document.getElementById('reg-email').value;
+                        const p1 = document.getElementById('reg-pass1').value;
                         const p2 = document.getElementById('reg-pass2').value;
                         if(p1 !== p2) return alert("Пароли не совпадают!");
                         await firebase.auth().createUserWithEmailAndPassword(e, p1);
-                    } else {
-                        await firebase.auth().signInWithEmailAndPassword(e, p1);
                     }
                     location.reload();
                 } catch(e) { alert(e.message); }
@@ -155,14 +154,34 @@
 
             async init(user) {
                 const uSnap = await firebase.database().ref('uids/' + user.uid).once('value');
-                if(!uSnap.exists()) return alert("Настройте профиль в старой версии!");
+                if(!uSnap.exists()) return this.showScreen('reg-screen'); // Если нет ника, отправляем на регу/настройку
                 
                 const myNick = uSnap.val().nick;
                 const snap = await firebase.database().ref('users/' + myNick).once('value');
                 this.me = snap.val();
                 
                 this.tab('chats');
+
+                // Восстановление и прослушка новых чатов
+                firebase.database().ref('inbox/' + myNick).on('child_added', s => {
+                    const d = s.val();
+                    if(!this.chats[d.from]) {
+                        this.chats[d.from] = { name: d.fromName || d.from };
+                        localStorage.setItem('f_chats', JSON.stringify(this.chats));
+                        this.renderList();
+                    }
+                });
                 this.renderList();
+            },
+
+            renderList() {
+                const l = document.getElementById('chat-list'); l.innerHTML = '';
+                Object.keys(this.chats).forEach(id => {
+                    const d = document.createElement('div'); d.className = 'chat-item';
+                    d.innerHTML = `<div class="avatar">${this.chats[id].name[0].toUpperCase()}</div>
+                        <div style="flex:1"><b>${this.chats[id].name}</b><br><small style="color:var(--gray)">@${id}</small></div>`;
+                    l.appendChild(d);
+                });
             },
 
             tab(t) {
@@ -192,7 +211,6 @@
                 const input = document.getElementById('edit-input');
                 const title = document.getElementById('edit-title');
                 const btn = document.getElementById('edit-confirm-btn');
-
                 modal.style.display = 'flex';
                 if(type === 'name') {
                     title.innerText = "Изменить имя";
@@ -210,33 +228,25 @@
             async saveEdit(type) {
                 const val = document.getElementById('edit-input').value.trim();
                 if(!val) return;
-                if(type === 'name') {
-                    await firebase.database().ref('users/' + this.me.nick).update({ name: val });
-                    this.me.name = val;
-                } else {
-                    const newNick = val.toLowerCase().replace('@','');
-                    if(newNick === this.me.nick) return this.closeEdit();
-                    const check = await firebase.database().ref('users/' + newNick).once('value');
-                    if(check.exists()) return alert("Ник занят!");
-                    
-                    const oldNick = this.me.nick;
-                    await firebase.database().ref('users/' + newNick).set({ ...this.me, nick: newNick });
-                    await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({ nick: newNick });
-                    await firebase.database().ref('users/' + oldNick).remove();
-                    this.me.nick = newNick;
-                }
-                this.updateUI();
-                this.closeEdit();
-            },
-
-            renderList() {
-                const l = document.getElementById('chat-list'); l.innerHTML = '';
-                for(let id in this.chats) {
-                    const d = document.createElement('div'); d.className = 'chat-item';
-                    d.innerHTML = `<div class="avatar">${this.chats[id].name[0].toUpperCase()}</div>
-                        <div style="flex:1"><b>${this.chats[id].name}</b><br><small>@${id}</small></div>`;
-                    l.appendChild(d);
-                }
+                try {
+                    if(type === 'name') {
+                        await firebase.database().ref('users/' + this.me.nick).update({ name: val });
+                        this.me.name = val;
+                    } else {
+                        const newNick = val.toLowerCase().replace('@','');
+                        if(newNick === this.me.nick) return this.closeEdit();
+                        const check = await firebase.database().ref('users/' + newNick).once('value');
+                        if(check.exists()) return alert("Ник занят!");
+                        
+                        const oldNick = this.me.nick;
+                        await firebase.database().ref('users/' + newNick).set({ ...this.me, nick: newNick });
+                        await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({ nick: newNick });
+                        await firebase.database().ref('users/' + oldNick).remove();
+                        this.me.nick = newNick;
+                    }
+                    this.updateUI();
+                    this.closeEdit();
+                } catch(e) { alert("Ошибка сохранения"); }
             },
 
             logout() { firebase.auth().signOut().then(() => { localStorage.clear(); location.reload(); }); }
