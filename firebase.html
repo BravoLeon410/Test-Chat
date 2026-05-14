@@ -3,159 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вспышка</title>
+    <title>Вспышка — Messenger</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --bg-dark: #121212;
-            --accent-orange: #ff8c00;
-            --text-white: #e0e0e0;
-            --panel-bg: #1e1e1e;
+            --bg-color: #000000;
+            --panel-color: #1a1a1a;
+            --accent-color: #ff8c00; /* Оранжевый */
+            --text-main: #ffffff;
+            --text-secondary: #aaaaaa;
         }
 
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: var(--bg-dark); 
-            color: var(--text-white);
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            user-select: none;
             overflow-x: hidden;
         }
 
         /* Шапка */
         .header {
-            position: sticky; top: 0; background: var(--bg-dark);
-            padding: 15px 20px; display: flex;
-            justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #333; z-index: 100;
+            position: sticky;
+            top: 0;
+            background: var(--bg-color);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            z-index: 100;
         }
-        .header span { color: var(--accent-orange); font-weight: bold; font-size: 1.2rem; }
+        .header h1 { color: var(--accent-color); margin: 0; font-size: 22px; letter-spacing: 1px; }
 
         /* Экраны */
-        .screen { display: none; padding: 10px; min-height: 100vh; padding-bottom: 90px; }
+        .screen { display: none; min-height: 100vh; padding-bottom: 100px; }
         .screen.active { display: block; }
 
-        /* Твой список чатов (ID сохранен для твоего кода) */
-        #chats-list { display: flex; flex-direction: column; gap: 10px; }
+        /* Список чатов (Оставил ID для твоего кода) */
+        #chats-list { padding: 10px; }
 
-        /* НИЖНЯЯ ПАНЕЛЬ (Закругленная и плавающая) */
+        /* Нижняя панель — Кнопки с эффектом закругления */
         #bottom-nav {
-            position: fixed; bottom: 20px; left: 50%;
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
             transform: translateX(-50%);
-            width: 90%; max-width: 400px; height: 65px;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex; border-radius: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 85%;
+            max-width: 400px;
+            height: 70px;
+            background: var(--panel-color);
+            display: flex;
+            border-radius: 35px;
             border: 1px solid #444;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             z-index: 1000;
-            touch-action: none;
+            touch-action: none; /* Важно для свайпа */
         }
 
         .nav-item {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; color: #777;
-            cursor: pointer; transition: 0.2s;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.1s ease;
+            cursor: pointer;
+            border-radius: 35px;
         }
 
-        .nav-item.active { color: var(--accent-orange); }
-        .nav-item i { font-size: 22px; }
-        .nav-item span { font-size: 10px; margin-top: 4px; text-transform: uppercase; }
-
-        /* Профиль */
-        .info-card { 
-            background: var(--panel-bg); margin: 10px 0; padding: 15px; 
-            border-radius: 15px; border-left: 4px solid var(--accent-orange);
+        /* Эффект зажатия кнопки */
+        .nav-item:active {
+            background: rgba(255, 140, 0, 0.1);
+            transform: scale(0.92);
         }
-        .info-label { font-size: 11px; color: var(--accent-orange); text-transform: uppercase; }
-        .info-value { font-size: 16px; margin-top: 5px; color: #fff; }
 
-        button {
-            background: var(--accent-orange); color: white; border: none;
-            padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
+        .nav-item.active { color: var(--accent-color); }
+        .nav-item i { font-size: 24px; }
+        .nav-item span { font-size: 11px; margin-top: 4px; font-weight: bold; }
+
+        /* Настройки и Профиль */
+        .profile-container { padding: 20px; text-align: center; }
+        .avatar-box {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 20px;
+        }
+        .avatar-box img {
+            width: 100%; height: 100%; border-radius: 50%;
+            border: 3px solid var(--accent-color); object-fit: cover;
         }
         
-        /* Анимация "Печатает" */
-        .typing-text { color: var(--accent-orange); font-size: 0.9em; margin-top: 5px; }
+        .info-group {
+            background: var(--panel-color);
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: left;
+            border-left: 5px solid var(--accent-color);
+        }
+        .label { color: var(--accent-color); font-size: 12px; text-transform: uppercase; margin-bottom: 5px; }
+        .value { font-size: 17px; color: #fff; }
+
+        .edit-btn {
+            background: none; border: 1px solid var(--accent-color);
+            color: var(--accent-color); padding: 5px 10px; border-radius: 5px;
+            margin-top: 10px; cursor: pointer; font-size: 12px;
+        }
+
+        .logout-btn {
+            margin-top: 30px; width: 100%; padding: 15px;
+            background: #ff3333; color: white; border: none; border-radius: 10px; font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <div id="chats-screen" class="screen active">
         <div class="header">
-            <span>ВСПЫШКА</span>
-            <i class="fas fa-plus-circle" id="search-btn" style="color: var(--accent-orange); font-size: 1.5rem;"></i>
+            <h1>ВСПЫШКА</h1>
+            <i class="fas fa-search-plus" id="add-chat-btn" style="color: var(--accent-color); font-size: 22px;"></i>
         </div>
-        <div id="chats-list"></div>
+        <div id="chats-list">
+            </div>
     </div>
 
     <div id="settings-screen" class="screen">
-        <div class="header"><span>НАСТРОЙКИ</span></div>
+        <div class="header"><h1>ПРОФИЛЬ</h1></div>
         
-        <div style="text-align: center; padding: 20px;">
-            <div style="position: relative; display: inline-block;">
-                <img src="https://via.placeholder.com/100" id="user-avatar" 
-                     style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--accent-orange); object-fit: cover;">
-                <i class="fas fa-camera" style="position: absolute; bottom: 0; right: 0; background: var(--accent-orange); padding: 8px; border-radius: 50%; font-size: 12px;" onclick="document.getElementById('file-input').click()"></i>
+        <div class="profile-container">
+            <div class="avatar-box">
+                <img src="default-avatar.png" id="user-avatar-img">
+                <div style="position: absolute; bottom: 0; right: 0; background: var(--accent-color); padding: 7px; border-radius: 50%; font-size: 12px;" onclick="changeAvatar()">
+                    <i class="fas fa-camera"></i>
+                </div>
             </div>
-            <input type="file" id="file-input" style="display:none">
-            <h2 id="profile-name" style="margin-top: 15px;">Загрузка...</h2>
-        </div>
 
-        <div class="info-card">
-            <div class="info-label">Электронная почта</div>
-            <div id="profile-email" class="info-value">...</div>
-        </div>
+            <div class="info-group">
+                <div class="label">Твоя почта</div>
+                <div id="profile-email" class="value">Загрузка...</div>
+            </div>
 
-        <div class="info-card">
-            <div class="info-label">Никнейм</div>
-            <div id="profile-nick" class="info-value">@...</div>
-            <button style="margin-top: 10px; width: 100%;" onclick="changeNickname()">ИЗМЕНИТЬ НИК</button>
-        </div>
+            <div class="info-group">
+                <div class="label">Имя (отображаемое)</div>
+                <div id="profile-name" class="value">...</div>
+                <button class="edit-btn" onclick="editDisplayName()">ИЗМЕНИТЬ ИМЯ</button>
+            </div>
 
-        <button onclick="logout()" style="margin: 20px 0; width: 100%; background: transparent; border: 1px solid #ff4444; color: #ff4444;">ВЫЙТИ ИЗ АККАУНТА</button>
+            <div class="info-group">
+                <div class="label">Никнейм (@username)</div>
+                <div id="profile-nickname" class="value">@...</div>
+                <button class="edit-btn" onclick="editUserNickname()">ИЗМЕНИТЬ НИК</button>
+            </div>
+
+            <button class="logout-btn" onclick="firebaseLogout()">ВЫЙТИ ИЗ СИСТЕМЫ</button>
+        </div>
     </div>
 
     <div id="bottom-nav">
-        <div class="nav-item active" id="tab-chats" onclick="switchTab('chats')">
-            <i class="fas fa-comment-alt"></i>
-            <span>Чаты</span>
+        <div class="nav-item active" id="btn-chats" onclick="showTab('chats')">
+            <i class="fas fa-comments"></i>
+            <span>ЧАТЫ</span>
         </div>
-        <div class="nav-item" id="tab-settings" onclick="switchTab('settings')">
-            <i class="fas fa-user-ninja"></i>
-            <span>Профиль</span>
+        <div class="nav-item" id="btn-settings" onclick="showTab('settings')">
+            <i class="fas fa-user-circle"></i>
+            <span>ПРОФИЛЬ</span>
         </div>
     </div>
 
     <script>
-        // ЛОГИКА СВАЙПА И НАВИГАЦИИ (Сохранена)
+        // Логика переключения и "перетаскивания" пальцем
         let startX = 0;
-        const navBar = document.getElementById('bottom-nav');
+        const nav = document.getElementById('bottom-nav');
 
-        function switchTab(tab) {
+        function showTab(tabName) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            if(tab === 'chats') {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            if(tabName === 'chats') {
                 document.getElementById('chats-screen').classList.add('active');
-                document.getElementById('tab-chats').classList.add('active');
+                document.getElementById('btn-chats').classList.add('active');
             } else {
                 document.getElementById('settings-screen').classList.add('active');
-                document.getElementById('tab-settings').classList.add('active');
-                if(typeof loadProfileInfo === "function") loadProfileInfo();
+                document.getElementById('btn-settings').classList.add('active');
+                // Вызываем функцию обновления данных профиля, если она есть
+                if (typeof syncProfileData === 'function') syncProfileData();
             }
         }
 
-        navBar.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
-        navBar.addEventListener('touchmove', (e) => {
-            let moveX = e.touches[0].clientX;
-            let diff = startX - moveX;
-            if (diff > 60) switchTab('settings');
-            if (diff < -60) switchTab('chats');
+        // Обработка жеста (зажимаем на панели и ведем)
+        nav.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
         });
 
-        // Сюда вставь весь свой старый код Firebase (Init, Auth, Database)
-        // Убедись, что функции отрисовки чатов используют ID 'chats-list'
+        nav.addEventListener('touchmove', (e) => {
+            let currentX = e.touches[0].clientX;
+            let diff = startX - currentX;
+
+            if (diff > 50) showTab('settings'); // Свайп влево
+            if (diff < -50) showTab('chats');    // Свайп вправо
+        });
+
+        // ПРИМЕЧАНИЕ ДЛЯ ТЕБЯ:
+        // Теперь вставь сюда свой старый код Firebase. 
+        // 1. Используй document.getElementById('profile-email').innerText = user.email; для почты.
+        // 2. Функции для смены имени и ника раздели — одну пиши в базу как 'name', другую как 'nickname'.
     </script>
 </body>
 </html>
