@@ -12,25 +12,36 @@
         :root { --bg: #000; --card: #121212; --accent: #ff8c00; --text: #fff; --gray: #777; --red: #ff4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; }
+        
         .screen { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
         .screen.active { display: flex; }
         header { padding: 15px; background: var(--card); border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+
         .input-box { position: relative; width: 100%; margin-bottom: 12px; }
         input { width: 100%; background: #1a1a1a; border: 1px solid #333; padding: 15px 50px 15px 20px; border-radius: 30px; color: #fff; outline: none; font-size: 16px; }
+
         .btn { background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+
         .fab { position: fixed; bottom: 100px; right: 25px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #000; z-index: 100; border: none; }
+
         .chat-item { padding: 15px; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
+
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; position: relative; user-select: none; -webkit-user-select: none; cursor: pointer; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 16px; line-height: 1.4; user-select: none; -webkit-user-select: none; cursor: pointer; }
         .msg.out { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 4px; }
         .msg.in { align-self: flex-start; background: #222; color: #fff; border-bottom-left-radius: 4px; }
+
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: 25px; border: 1px solid #333; text-align: center; }
+
         #bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 70px; background: #111; display: none; border-radius: 35px; border: 1px solid #333; z-index: 1000; }
         #bottom-nav.visible { display: flex; }
         .nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray); }
         .nav-btn.active { color: var(--accent); }
+
+        .del-menu { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid #333; border-radius: 25px 25px 0 0; padding: 20px; z-index: 4000; flex-direction: column; gap: 10px; }
+        .del-btn { padding: 15px; border-radius: 15px; border: none; background: #1a1a1a; color: #fff; font-weight: bold; font-size: 16px; text-align: left; }
     </style>
 </head>
 <body>
@@ -46,9 +57,9 @@
     <div id="reg-screen" class="screen" style="justify-content:center; padding:30px;">
         <h2 style="color:var(--accent); text-align:center; margin-bottom:30px;">РЕГИСТРАЦИЯ</h2>
         <div class="input-box"><input type="email" id="reg-email" placeholder="Email"></div>
-        <div class="input-box"><input type="text" id="reg-name" placeholder="Ваше Имя"></div>
+        <div class="input-box"><input type="text" id="reg-name" placeholder="Имя"></div>
         <div class="input-box"><input type="text" id="reg-nick" placeholder="Никнейм"></div>
-        <div class="input-box"><input type="password" id="reg-pass1" placeholder="Пароль"></div>
+        <div class="input-box"><input type="password" id="reg-pass" placeholder="Пароль"></div>
         <button class="btn" onclick="app.auth('reg')">СОЗДАТЬ</button>
         <p onclick="app.showScreen('auth-screen')" style="text-align:center; margin-top:20px; color:var(--gray);">Назад</p>
     </div>
@@ -63,7 +74,7 @@
         <header><i class="fas fa-arrow-left" onclick="app.tab('chats')"></i><b id="chat-title">Чат</b><div style="width:20px;"></div></header>
         <div id="messages"></div>
         <div style="padding:15px; display:flex; gap:10px; background:var(--card);">
-            <input type="text" id="m-input" placeholder="Сообщение..." style="margin-bottom:0;">
+            <input type="text" id="m-input" placeholder="Сообщение...">
             <button onclick="app.send()" style="background:var(--accent); border:none; width:50px; border-radius:50%; color:#000;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -79,18 +90,22 @@
                 <div style="font-size:11px; color:var(--accent);">НИКНЕЙМ</div>
                 <div id="p-nick" style="font-size:18px;">@...</div>
             </div>
-            <div>
-                <div style="font-size:11px; color:var(--accent);">ПОЧТА</div>
-                <div id="p-email" style="font-size:16px; margin-bottom:10px;">••••••••••••</div>
-                <button id="email-btn" onclick="app.toggleEmail()" style="background:none; border:1px solid var(--accent); color:var(--accent); padding:5px 12px; border-radius:10px; font-size:11px;">ПОКАЗАТЬ</button>
-            </div>
         </div>
         <button onclick="app.logout()" style="color:var(--red); background:none; border:none; margin:10px 20px; font-weight:bold;">ВЫЙТИ</button>
     </div>
 
+    <div id="search-modal" class="modal">
+        <div class="modal-content">
+            <h3>Найти человека</h3>
+            <div class="input-box"><input type="text" id="s-input" placeholder="Ник без @"></div>
+            <button class="btn" onclick="app.findUser()">ОТКРЫТЬ ЧАТ</button>
+            <button class="btn" style="background:#222; color:#fff; margin-top:10px;" onclick="app.toggleModal('search-modal', false)">ОТМЕНА</button>
+        </div>
+    </div>
+
     <div id="edit-modal" class="modal">
         <div class="modal-content">
-            <h3 id="edit-title" style="color:var(--accent); margin-bottom:15px;">Изменить</h3>
+            <h3 id="edit-title">Изменить</h3>
             <div class="input-box"><input type="text" id="edit-input"></div>
             <button class="btn" id="edit-confirm-btn">СОХРАНИТЬ</button>
             <button class="btn" style="background:#222; color:#fff; margin-top:10px;" onclick="app.closeEdit()">ОТМЕНА</button>
@@ -104,7 +119,7 @@
 
     <script>
         const app = {
-            me: null, chats: JSON.parse(localStorage.getItem('f_chats') || "{}"), activeChat: null,
+            me: null, myId: null, chats: {}, 
             conf: { apiKey: "AIzaSyCrWLh9mCCZxeYH5sWFdCzwT3U2qgFGMEk", authDomain: "messenger-6d45a.firebaseapp.com", databaseURL: "https://messenger-6d45a-default-rtdb.firebaseio.com", projectId: "messenger-6d45a", storageBucket: "messenger-6d45a.firebasestorage.app", messagingSenderId: "871171819316", appId: "1:871171819316:web:bfa2459b42a1be9e780761" },
 
             showScreen(id) {
@@ -115,79 +130,107 @@
 
             async auth(type) {
                 try {
-                    const e = document.getElementById(type === 'login' ? 'log-email' : 'reg-email').value;
-                    const p = document.getElementById(type === 'login' ? 'log-pass' : 'reg-pass1').value;
                     if(type === 'reg') {
+                        const email = document.getElementById('reg-email').value;
+                        const pass = document.getElementById('reg-pass').value;
                         const name = document.getElementById('reg-name').value;
                         const nick = document.getElementById('reg-nick').value.toLowerCase().trim();
-                        const res = await firebase.auth().createUserWithEmailAndPassword(e, p);
-                        await firebase.database().ref('users/' + nick).set({ name, nick, uid: res.user.uid, email: e });
-                        await firebase.database().ref('uids/' + res.user.uid).set({ nick });
+                        
+                        const check = await firebase.database().ref('nicknames/' + nick).once('value');
+                        if(check.exists()) return alert("Ник занят!");
+
+                        const res = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+                        await firebase.database().ref('users/' + res.user.uid).set({ name, nick, uid: res.user.uid });
+                        await firebase.database().ref('nicknames/' + nick).set(res.user.uid);
                     } else {
-                        await firebase.auth().signInWithEmailAndPassword(e, p);
+                        await firebase.auth().signInWithEmailAndPassword(document.getElementById('log-email').value, document.getElementById('log-pass').value);
                     }
                     location.reload();
                 } catch(e) { alert(e.message); }
             },
 
             async init(user) {
-                const uSnap = await firebase.database().ref('uids/' + user.uid).once('value');
-                if(!uSnap.exists()) return this.showScreen('auth-screen');
-                const snap = await firebase.database().ref('users/' + uSnap.val().nick).once('value');
-                this.me = snap.val();
-                this.updateUI();
-                this.tab('chats');
+                this.myId = user.uid;
+                firebase.database().ref('users/' + this.myId).on('value', snap => {
+                    this.me = snap.val();
+                    this.updateUI();
+                    if(!this.activeScreen) this.tab('chats');
+                });
             },
 
             updateUI() {
                 if(!this.me) return;
-                document.getElementById('p-name').innerText = this.me.name || "Без имени";
-                document.getElementById('p-nick').innerText = '@' + (this.me.nick || "...");
+                document.getElementById('p-name').innerText = this.me.name;
+                document.getElementById('p-nick').innerText = '@' + this.me.nick;
+            },
+
+            async findUser() {
+                const nick = document.getElementById('s-input').value.toLowerCase().trim();
+                const snap = await firebase.database().ref('nicknames/' + nick).once('value');
+                if(!snap.exists()) return alert("Пользователь не найден");
+                this.toggleModal('search-modal', false);
+                this.openChat(snap.val(), nick);
+            },
+
+            openChat(id, name) {
+                this.activeChat = id;
+                document.getElementById('chat-title').innerText = name;
+                this.showScreen('chat-window');
+                const b = document.getElementById('messages'); b.innerHTML = '';
+                const chatId = [this.myId, id].sort().join('_');
+                
+                firebase.database().ref('chats/' + chatId).off();
+                firebase.database().ref('chats/' + chatId).on('child_added', s => {
+                    const m = s.val();
+                    const d = document.createElement('div');
+                    d.className = 'msg ' + (m.from === this.myId ? 'out' : 'in');
+                    d.innerText = m.text;
+                    b.appendChild(d); b.scrollTop = b.scrollHeight;
+                });
+            },
+
+            async send() {
+                const i = document.getElementById('m-input'), t = i.value.trim();
+                if(!t || !this.activeChat) return;
+                const chatId = [this.myId, this.activeChat].sort().join('_');
+                await firebase.database().ref('chats/' + chatId).push({ from: this.myId, text: t, time: Date.now() });
+                i.value = '';
             },
 
             tab(t) {
+                this.activeScreen = t;
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 if(t === 'chats') { this.showScreen('list-screen'); document.getElementById('b-chats').classList.add('active'); }
-                else { this.showScreen('settings-screen'); document.getElementById('b-prof').classList.add('active'); this.updateUI(); }
+                else { this.showScreen('settings-screen'); document.getElementById('b-prof').classList.add('active'); }
             },
 
             openEdit(type) {
-                const i = document.getElementById('edit-input'), t = document.getElementById('edit-title'), b = document.getElementById('edit-confirm-btn');
-                document.getElementById('edit-modal').style.display = 'flex';
-                if(type === 'name') { t.innerText = "Имя"; i.value = this.me.name; b.onclick = () => this.saveEdit('name'); }
-                else { t.innerText = "Никнейм"; i.value = this.me.nick; b.onclick = () => this.saveEdit('nick'); }
+                const i = document.getElementById('edit-input'), b = document.getElementById('edit-confirm-btn');
+                this.toggleModal('edit-modal', true);
+                i.value = (type === 'name') ? this.me.name : this.me.nick;
+                b.onclick = () => this.saveEdit(type);
             },
 
             async saveEdit(type) {
                 const v = document.getElementById('edit-input').value.trim();
                 if(!v) return;
-                const oldNick = this.me.nick;
                 if(type === 'name') {
-                    await firebase.database().ref('users/' + oldNick).update({ name: v });
-                    this.me.name = v;
+                    await firebase.database().ref('users/' + this.myId).update({ name: v });
                 } else {
                     const newNick = v.toLowerCase();
-                    if(newNick === oldNick) return this.closeEdit();
-                    const check = await firebase.database().ref('users/' + newNick).once('value');
+                    if(newNick === this.me.nick) return this.closeEdit();
+                    const check = await firebase.database().ref('nicknames/' + newNick).once('value');
                     if(check.exists()) return alert("Ник занят!");
                     
-                    // Переносим всё в новый узел
-                    const newData = { ...this.me, nick: newNick };
-                    await firebase.database().ref('users/' + newNick).set(newData);
-                    await firebase.database().ref('uids/' + firebase.auth().currentUser.uid).set({ nick: newNick });
-                    await firebase.database().ref('users/' + oldNick).remove();
-                    this.me = newData;
+                    await firebase.database().ref('nicknames/' + this.me.nick).remove();
+                    await firebase.database().ref('nicknames/' + newNick).set(this.myId);
+                    await firebase.database().ref('users/' + this.myId).update({ nick: newNick });
                 }
-                this.updateUI();
                 this.closeEdit();
             },
 
-            closeEdit() { document.getElementById('edit-modal').style.display = 'none'; },
-            toggleEmail() {
-                const p = document.getElementById('p-email'), b = document.getElementById('email-btn');
-                if(b.innerText === 'ПОКАЗАТЬ') { p.innerText = firebase.auth().currentUser.email; b.innerText = 'СКРЫТЬ'; }
-                else { p.innerText = '••••••••••••'; b.innerText = 'ПОКАЗАТЬ'; }
-            },
+            toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; },
+            closeEdit() { this.toggleModal('edit-modal', false); },
             logout() { firebase.auth().signOut().then(() => location.reload()); }
         };
 
