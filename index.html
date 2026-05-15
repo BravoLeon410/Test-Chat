@@ -126,13 +126,13 @@
             chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
             
             conf: { 
-                apiKey: "FIREBASE_API_KEY", 
-                authDomain: "FIREBASE_AUTH_DOMAIN", 
-                databaseURL: "FIREBASE_DB_URL", 
-                projectId: "FIREBASE_PROJECT_ID", 
-                storageBucket: "FIREBASE_STORAGE_BUCKET", 
-                messagingSenderId: "FIREBASE_SENDER_ID", 
-                appId: "FIREBASE_APP_ID" 
+                apiKey: "CONF_API_KEY", 
+                authDomain: "CONF_AUTH_DOMAIN", 
+                databaseURL: "CONF_DB_URL", 
+                projectId: "CONF_PROJECT_ID", 
+                storageBucket: "CONF_STORAGE_BUCKET", 
+                messagingSenderId: "CONF_SENDER_ID", 
+                appId: "CONF_APP_ID" 
             },
 
             toggleAuth(isReg) {
@@ -163,6 +163,7 @@
                     if(type === 'reg') {
                         const email = document.getElementById('reg-email').value, pass = document.getElementById('reg-pass').value;
                         const name = document.getElementById('reg-name').value, nick = document.getElementById('reg-nick').value.toLowerCase().trim();
+                        if(!email || !pass || !name || !nick) return alert("Заполни все поля!");
                         const check = await firebase.database().ref('nicknames/' + nick).once('value');
                         if(check.exists()) return alert("Ник занят!");
                         const res = await firebase.auth().createUserWithEmailAndPassword(email, pass);
@@ -178,7 +179,7 @@
                 this.myId = user.uid;
                 firebase.database().ref('users/' + this.myId).on('value', snap => {
                     this.me = snap.val();
-                    if(!this.me) return this.logout();
+                    if(!this.me) return;
                     document.getElementById('auth-screen').style.display = 'none';
                     this.tab('chats');
                     this.renderList();
