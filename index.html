@@ -125,7 +125,7 @@
             me: null, myId: null, currentOpponentId: null, currentMsgId: null, currentMsgText: null, currentMsgIsMe: false,
             chats: JSON.parse(localStorage.getItem('f_chats') || "{}"),
             
-            // КЛЮЧИ СКРЫТЫ. Они будут подставляться из настроек GitHub
+            // ТУТ МЕТКИ ДЛЯ GITHUB ACTIONS
             conf: { 
                 apiKey: "FIREBASE_API_KEY", 
                 authDomain: "FIREBASE_AUTH_DOMAIN", 
@@ -285,7 +285,6 @@
 
         window.onclick = (e) => { if(!e.target.closest('.msg')) app.closeMenu(); };
         window.onload = () => {
-            // ФИНАЛЬНАЯ МАГИЯ: этот скрипт заменит названия на реальные ключи прямо в браузере, если мы настроим GitHub Actions.
             firebase.initializeApp(app.conf);
             firebase.auth().onAuthStateChanged(u => { if(u) app.init(u); else document.getElementById('auth-screen').style.display = 'flex'; });
         };
