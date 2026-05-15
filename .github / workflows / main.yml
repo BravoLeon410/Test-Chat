@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Inject Secrets
       env:
@@ -19,13 +19,13 @@ jobs:
         FB_SENDER: ${{ secrets.FIREBASE_SENDER_ID }}
         FB_APP: ${{ secrets.FIREBASE_APP_ID }}
       run: |
-        sed -i "s|FIREBASE_API_KEY|$FB_KEY|g" index.html
-        sed -i "s|FIREBASE_AUTH_DOMAIN|$FB_DOMAIN|g" index.html
-        sed -i "s|FIREBASE_DB_URL|$FB_URL|g" index.html
-        sed -i "s|FIREBASE_PROJECT_ID|$FB_ID|g" index.html
-        sed -i "s|FIREBASE_STORAGE_BUCKET|$FB_BUCKET|g" index.html
-        sed -i "s|FIREBASE_SENDER_ID|$FB_SENDER|g" index.html
-        sed -i "s|FIREBASE_APP_ID|$FB_APP|g" index.html
+        sed -i "s|CONF_API_KEY|$FB_KEY|g" index.html
+        sed -i "s|CONF_AUTH_DOMAIN|$FB_DOMAIN|g" index.html
+        sed -i "s|CONF_DB_URL|$FB_URL|g" index.html
+        sed -i "s|CONF_PROJECT_ID|$FB_ID|g" index.html
+        sed -i "s|CONF_STORAGE_BUCKET|$FB_BUCKET|g" index.html
+        sed -i "s|CONF_SENDER_ID|$FB_SENDER|g" index.html
+        sed -i "s|CONF_APP_ID|$FB_APP|g" index.html
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
