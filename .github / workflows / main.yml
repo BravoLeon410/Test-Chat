@@ -1,7 +1,10 @@
 name: Deploy Project
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: # Позволяет запускать деплой вручную кнопкой
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -19,6 +22,7 @@ jobs:
         FB_SENDER: ${{ secrets.FIREBASE_SENDER_ID }}
         FB_APP: ${{ secrets.FIREBASE_APP_ID }}
       run: |
+        # Эта часть заменяет заглушки в твоем index.html на реальные ключи из Secrets
         sed -i "s|CONF_API_KEY|$FB_KEY|g" index.html
         sed -i "s|CONF_AUTH_DOMAIN|$FB_DOMAIN|g" index.html
         sed -i "s|CONF_DB_URL|$FB_URL|g" index.html
@@ -27,7 +31,7 @@ jobs:
         sed -i "s|CONF_SENDER_ID|$FB_SENDER|g" index.html
         sed -i "s|CONF_APP_ID|$FB_APP|g" index.html
 
-    - name: Deploy
+    - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
