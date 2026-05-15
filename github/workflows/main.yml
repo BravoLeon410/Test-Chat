@@ -8,18 +8,28 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
     - name: Inject Secrets
+      env:
+        FB_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        FB_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+        FB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        FB_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        FB_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        FB_SENDER: ${{ secrets.FIREBASE_SENDER_ID }}
+        FB_APP: ${{ secrets.FIREBASE_APP_ID }}
       run: |
-        sed -i "s/FIREBASE_API_KEY/${{ secrets.FIREBASE_API_KEY }}/g" index.html
-        sed -i "s/FIREBASE_AUTH_DOMAIN/${{ secrets.FIREBASE_AUTH_DOMAIN }}/g" index.html
-        sed -i "s/FIREBASE_DB_URL/${{ secrets.FIREBASE_DB_URL }}/g" index.html
-        sed -i "s/FIREBASE_PROJECT_ID/${{ secrets.FIREBASE_PROJECT_ID }}/g" index.html
-        sed -i "s/FIREBASE_STORAGE_BUCKET/${{ secrets.FIREBASE_STORAGE_BUCKET }}/g" index.html
-        sed -i "s/FIREBASE_SENDER_ID/${{ secrets.FIREBASE_SENDER_ID }}/g" index.html
-        sed -i "s/FIREBASE_APP_ID/${{ secrets.FIREBASE_APP_ID }}/g" index.html
+        sed -i "s|FIREBASE_API_KEY|$FB_KEY|g" index.html
+        sed -i "s|FIREBASE_AUTH_DOMAIN|$FB_DOMAIN|g" index.html
+        sed -i "s|FIREBASE_DB_URL|$FB_URL|g" index.html
+        sed -i "s|FIREBASE_PROJECT_ID|$FB_ID|g" index.html
+        sed -i "s|FIREBASE_STORAGE_BUCKET|$FB_BUCKET|g" index.html
+        sed -i "s|FIREBASE_SENDER_ID|$FB_SENDER|g" index.html
+        sed -i "s|FIREBASE_APP_ID|$FB_APP|g" index.html
+
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: .
-
+        force_orphan: true
